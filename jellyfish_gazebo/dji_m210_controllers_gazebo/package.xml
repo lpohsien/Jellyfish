@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>dji_m210_controllers_gazebo</name>
+  <version>0.3.5</version>
+  <description>The dji_m210_controllers_gazebo package</description>
+
+  <license>MIT</license>
+
+  <maintainer email="sharkbonebroth@todo.com">sharkbonebroth</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>gazebo_dev</build_depend>
+  <exec_depend>gazebo</exec_depend>
+  <depend version_gte="2.3.4">gazebo_ros_control</depend>
+  <depend>roscpp </depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>gazebo_ros</depend>
+</package>

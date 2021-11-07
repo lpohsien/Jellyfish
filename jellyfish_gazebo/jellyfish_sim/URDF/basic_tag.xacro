@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot name="aruco_tag" xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:include filename="$(find dji_m210_description)/urdf/component_snippets.xacro"/>
+
+    <!-- Properties -->
+    <xacro:property name="namespace" value="landing_platform" />
+
+    <link name="base_link"></link>
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="aruco_tag_base" />
+    </joint>
+    <link name="aruco_tag_base">
+        <visual>
+            <geometry>
+                <mesh filename="package://dji_m210_gazebo/meshes/tag14/tag14.dae"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <box size="1 1 0.05"/>
+            </geometry>
+        </collision>
+        <inertial>
+            <mass value="100"/>
+            <inertia ixx="8.354" ixy="0.0" ixz="0.0" iyy="8.354" iyz="0.0" izz="16.667" />
+        </inertial>
+    </link>
+    <xacro:odometry_plugin_macro
+        namespace="${namespace}/ground_truth"
+        odometry_sensor_suffix=""
+        parent_link="base_link"
+        pose_topic="pose"
+        pose_with_covariance_topic="pose_with_covariance"
+        position_topic="position"
+        transform_topic="transform"
+        odometry_topic="odometry"
+        parent_frame_id="world"
+        mass_odometry_sensor="0.00001"
+        measurement_divisor="1"
+        measurement_delay="0"
+        unknown_delay="0.0"
+        noise_normal_position="0 0 0"
+        noise_normal_quaternion="0 0 0"
+        noise_normal_linear_velocity="0 0 0"
+        noise_normal_angular_velocity="0 0 0"
+        noise_uniform_position="0 0 0"
+        noise_uniform_quaternion="0 0 0"
+        noise_uniform_linear_velocity="0 0 0"
+        noise_uniform_angular_velocity="0 0 0"
+        enable_odometry_map="false"
+        odometry_map=""
+        image_scale="">
+        <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
+        <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+    </xacro:odometry_plugin_macro>
+</robot>

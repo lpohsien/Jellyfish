@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="camera_name" default="webcam"/>
+  <arg name="camera_info_url" default="file:///$(find cv_sandbox)/config/$(arg camera_name)_info.yaml"/>
+  <arg name="visualize" default="false"/>
+
+  <include file="$(find video_stream_opencv)/launch/camera.launch" >
+    <arg name="camera_name" value="$(arg camera_name)" />
+    <arg name="video_stream_provider" value="0" />
+    <arg name="set_camera_fps" value="30"/>
+    <arg name="frame_id" value="$(arg camera_name)" />
+    <arg name="visualize" value="$(arg visualize)" />
+  </include>
+</launch>

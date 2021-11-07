@@ -1,0 +1,17 @@
+#goal
+int32 time #time taken to move to the goal
+uint8 mode #0 for incremental mode, 1 for absolute mode
+uint8 ignore_yaw #Set to 1 to ignore yaw movement commands, else set to 0 if you want the gimbal to follow yaw commands
+uint8 ignore_roll #Set to 1 to ignore roll movement commands, else set to 0 if you want the gimbal to follow roll commands
+uint8 ignore_pitch #Set to 1 to ignore pitch movement commands, else set to 0 if you want the gimbal to follow pitch commands
+float32 yaw #In degrees
+float32 roll #In degrees
+float32 pitch #In degrees
+---
+#result
+uint8 success
+---
+#feedback
+float32 yaw
+float32 roll
+float32 pitch

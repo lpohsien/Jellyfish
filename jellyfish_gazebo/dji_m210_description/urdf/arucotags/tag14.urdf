@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="aruco_tag">
+    <link name="base_link"></link>
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="base_link" />
+        <child link="landing_surface" />
+    </joint>
+    <link name="landing_surface">
+        <visual>
+            <geometry>
+                <mesh filename="package://dji_m210_description/meshes/aruco_tag_14.dae"/>
+            </geometry>
+        </visual>
+    </link>
+</robot>

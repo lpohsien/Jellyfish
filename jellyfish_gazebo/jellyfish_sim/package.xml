@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>jellyfish_sim</name>
+  <version>0.0.0</version>
+  <description>The jellyfish_sim package</description>
+
+  <maintainer email="sharkbonebroth@todo.todo">sharkbonebroth</maintainer>
+
+
+  <license>MIT</license>
+
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>message_generation</build_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>rotors_gazebo_plugins</exec_depend>
+  <exec_depend>joint_state_controller</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>dji_m210_controllers_gazebo</exec_depend>
+  <exec_depend>joint_state_controller</exec_depend>
+  <exec_depend>joint_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>rotors_control</exec_depend>
+  <exec_depend>rotors_gazebo</exec_depend>
+  <exec_depend>mav_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>dji_sdk</exec_depend>
+  <exec_depend>controller_manager</exec_depend>
+  <exec_depend>position_controllers</exec_depend>
+  
+  <depend>gazebo_ros</depend>
+  <export>
+    <gazebo_ros
+          gazebo_model_path="${prefix}/models" />
+  </export>
+</package>
+

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="marker_frame" default="aruco"/>
+  <arg name="dictionary" default="ARUCO_MIP_36h12"/>
+  <arg name="marker_id" default="14"/>
+  <arg name="marker_size" default="0.039"/>
+  <arg name="use_enclosed" default="false"/>
+  <arg name="use_pose_tracker" default="true"/>
+  <arg name="camera_name" default="webcam"/>
+  <arg name="visualize" default="true"/>
+  <arg name="publish_tf" default="true"/>
+
+  <node pkg="aruco_ros_wrapper" type="simple_single" name="$(arg camera_name)_aruco_node" output="screen">
+    <remap from="/camera_info" to="/$(arg camera_name)/camera_info"/>
+    <remap from="/image" to="/$(arg camera_name)/image_rect"/>
+    <param name="image_is_rectified" value="true"/>
+    <param name="marker_id" value="$(arg marker_id)"/>
+    <param name="marker_size" value="$(arg marker_size)"/>
+    <param name="use_enclosed" value="$(arg use_enclosed)"/>
+    <param name="camera_frame" value="$(arg camera_name)"/>
+    <param name="marker_frame" value="$(arg marker_frame)"/>
+    <param name="corner_refinement" value="CORNER_SUBPIX"/>
+    <param name="rotate_marker_axis" value="false"/>
+    <param name="use_pose_tracker" value="$(arg use_pose_tracker)"/>
+    <param name="publish_tf" value="$(arg publish_tf)"/>
+  </node>
+
+  <node pkg="image_view" type="image_view" name="$(arg camera_name)_image_view" if="$(arg visualize)">
+    <remap from="image" to="$(arg camera_name)_aruco_node/result"/>
+  </node>
+
+</launch>

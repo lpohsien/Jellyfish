@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="name" default="landing_platform"/>
+    <arg name="model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
+    <arg name="x" default="3.0"/>
+    <arg name="y" default="0.0"/>
+    <arg name="z" default="0.0"/>
+    <arg name="yaw"   default="0.0" />
+    <arg name="world_frame" default="/world"/>
+    <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
+    <arg name="base_link_frame" default="$(arg tf_prefix)/base_link"/>
+    <arg name="drone_name" default="dji_m210"/>
+
+    <!-- Send drone name and service vertices to param server (needed for fake marvelmind to work) -->
+    <param name="drone_name" type="string" value="$(arg drone_name)"/>
+    <rosparam command="load"
+                file="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml" />
+
+    <!-- send the landing platform XML to param server -->
+    <param name="robot_description"
+        command="$(find xacro)/xacro '$(arg model)'
+                world_frame:=$(arg world_frame)
+                robot_namespace:=$(arg name)"/>
+
+    <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />
+    <param name="base_link_frame" type="string" value="$(arg base_link_frame)"/>
+    <param name="world_frame" type="string" value="$(arg world_frame)"/>
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <node name="spawn_landing_platform" pkg="gazebo_ros" type="spawn_model"
+        args="-param robot_description
+            -urdf
+            -x $(arg x)
+            -y $(arg y)
+            -z $(arg z)
+            -Y $(arg yaw)
+            -model $(arg name)"
+        respawn="false" output="screen">
+    </node>
+    
+    <!-- launch fake marvelmind node-->
+    <node name="fake_marvelmind" pkg="jellyfish_sim" type="fake_marvelmind.py" respawn="false" output="screen"/>    
+</launch>

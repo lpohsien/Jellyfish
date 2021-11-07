@@ -1,0 +1,15 @@
+<launch>
+    <arg name="model" default="$(find dji_m210_description)/urdf/arucotags/tag14.urdf"/>
+    <arg name="name" default="dji_m210"/>
+
+    <arg name="world_frame" default="/world"/>
+    <param name="robot_description"
+          command="$(find xacro)/xacro '$(arg model)'"/>
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find dji_m210_description)/cfg/dji_m210.rviz"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+        <param name="use_gui" value="True"/>
+    </node>
+</launch>
