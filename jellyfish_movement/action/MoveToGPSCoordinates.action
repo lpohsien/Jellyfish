@@ -1,0 +1,12 @@
+#goal
+float64 latitude
+float64 longitude
+float64 height
+---
+#result
+uint8 success
+---
+#feedback
+float32 x_diff
+float32 y_diff
+float32 z_diff

@@ -1,0 +1,15 @@
+#goal
+float32 x_goal # x position in ENU frame
+float32 y_goal # y position in ENU frame
+float32 z_goal # z position in ENU frame
+float32 yaw_goal # yaw angle(radians) in ENU frame
+string pose_topic # Topic to subscribe to for pose
+---
+#result
+uint8 success
+---
+#feedback
+float32 x_diff
+float32 y_diff
+float32 z_diff
+float32 yaw_diff
