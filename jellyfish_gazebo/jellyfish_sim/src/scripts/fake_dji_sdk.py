@@ -14,6 +14,7 @@ import geometry_msgs.msg
 import mav_msgs.msg
 import dji_sdk.srv
 
+local_pos_ref_set = False
 drone_activated = False
 control_authority = False
 command_in_queue = False
@@ -61,6 +62,12 @@ def handle_drone_task_control_request(req):
             command_trajectory_msg.position.z = 1
             command_in_queue = True
             return [True, 0, 0, 0]
+
+def handle_set_local_position_ref_request(req):
+    global local_pos_ref_set
+    rospy.loginfo("local position ref set")
+    local_pos_ref_set = True
+    return True
         
 def handle_current_pose(msg):
     global current_pose
@@ -110,6 +117,14 @@ def attitude_publisher(publisher):
     attitude_message.quaternion.w = current_pose.orientation.w
     publisher.publish(attitude_message)
 
+def local_position_publisher(publisher):
+    if local_pos_ref_set:
+        local_position_message = geometry_msgs.msg.PointStamped()
+        local_position_message.point.x = current_pose.position.x
+        local_position_message.point.y = current_pose.position.y
+        local_position_message.point.z = current_pose.position.z
+        publisher.publish(local_position_message)
+
 if __name__ == '__main__':
     #Subscribers
     rospy.init_node("fake_dji_sdk")
@@ -124,15 +139,18 @@ if __name__ == '__main__':
     #Services
     sdk_control_authority_server = rospy.Service("/dji_sdk/sdk_control_authority", dji_sdk.srv.SDKControlAuthority, handle_sdk_control_authority_request)
     drone_task_control_server = rospy.Service("/dji_sdk/drone_task_control", dji_sdk.srv.DroneTaskControl, handle_drone_task_control_request)
+    set_local_pos_ref_server = rospy.Service("/dji_sdk/set_local_pos_ref", dji_sdk.srv.SetLocalPosRef, handle_set_local_position_ref_request)
 
     #Publishers
     r = rospy.Rate(8)
     gps_pub = rospy.Publisher("/dji_sdk/gps_position", sensor_msgs.msg.NavSatFix, queue_size=5)
     command_trajectory_pub = rospy.Publisher("/dji_m210/position_command/trajectory", mav_msgs.msg.CommandTrajectory, queue_size=5)
     attitude_pub = rospy.Publisher("/dji_sdk/attitude", geometry_msgs.msg.QuaternionStamped, queue_size = 5)
+    local_position_pub = rospy.Publisher("/dji_sdk/local_position", geometry_msgs.msg.PointStamped, queue_size = 5)
     while not rospy.is_shutdown():
         gps_publisher(gps_pub)
         command_trajectory_publisher(command_trajectory_pub)
         attitude_publisher(attitude_pub)
+        local_position_publisher(local_position_pub)
         r.sleep()
     rospy.spin()
