@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-#TODO I have changed the service to use height instead of altitude. Modify this code and the others relevant ones
-#to fit the new service call
+#TODO Make each action interrupt each other
 
 """
 This code provides:
@@ -19,16 +18,24 @@ initial_altitude = None
 current_latitude = None
 current_longitude = None
 current_height = None
-current_yaw = None
 
 goal_latitude = None
 goal_longitude = None
 goal_height = None #In meters
+
+#Fused current position of vehicle, relies on GPS heavily
+current_x = None
+current_y = None
+current_z = None
+
+current_yaw = None
+
 goal_yaw = None #In radians
 
 moving_towards_goal = False
 inbound_counter = 0
 
+from re import T
 import rospy
 import sensor_msgs.msg
 import geometry_msgs.msg
@@ -36,8 +43,10 @@ import std_msgs.msg
 import math
 import tf.transformations
 import dji_sdk.srv
+import jellyfish_movement.msg
+import actionlib
 
-from jellyfish.srv import set_goalpoint
+from jellyfish_movement.srv import set_gps_goalpoint
 
 def activate_drone():
     rospy.loginfo("Activating drone...")
@@ -106,7 +115,6 @@ def take_off():
     except rospy.ServiceException as e:
         rospy.logerr(f"Service call failed: {e}")
 
-
 def initialise():
     #launching dji_sdk using the dji_sdk launch file would call this already. You can call this just in case
     #activate_drone()
@@ -124,6 +132,15 @@ def handle_current_gps_coordinates(msg):
     current_longitude = msg.longitude
     current_height = msg.altitude - initial_altitude
 
+def handle_current_cartesian_coordinates(msg):
+    global current_x
+    global current_y
+    global current_z
+
+    current_x = msg.point.x
+    current_y = msg.point.y
+    current_z = msg.point.z
+
 def handle_attitude_data(msg):
     #Uses attitude data to get yaw of drone.
     global current_yaw
@@ -131,7 +148,7 @@ def handle_attitude_data(msg):
     current_orientation_quaternion = [msg.quaternion.x, msg.quaternion.y, msg.quaternion.z, msg.quaternion.w]
     current_yaw = tf.transformations.euler_from_quaternion(current_orientation_quaternion)[2] #Get yaw in radians
 
-def handle_set_goalpoint(req):
+def handle_set_GPS_goalpoint(req):
     global goal_latitude
     global goal_longitude
     global goal_height
@@ -147,8 +164,8 @@ def handle_set_goalpoint(req):
     rospy.loginfo(msg)
     return msg
 
-def waypoint_handler_server():
-    waypoint_service = rospy.Service("set_goalpoint", set_goalpoint, handle_set_goalpoint)
+def gps_goalpoint_handler_server():
+    waypoint_service = rospy.Service("set_GPS_goalpoint", set_gps_goalpoint, handle_set_GPS_goalpoint)
     rospy.loginfo("Drone_movement_control Server ready")
 
 def joy_broadcaster():
@@ -183,15 +200,13 @@ def joy_broadcaster():
             axes.append(crow_fly_distance*math.sin(bearing)) #offset in the x direction for the shortest distance great circle arc
             axes.append(crow_fly_distance*math.cos(bearing)) #offset in the y direction for the shortest distance great circle arc
             axes.append(goal_height) #z height above initial position
-            axes.append(yaw_difference)
+            axes.append(goal_yaw)
             command = sensor_msgs.msg.Joy()
             if axes == []:
                 continue
             command.axes = axes
             pub.publish(command)
         r.sleep()
-
-
 
 def get_distance_and_bearings_from_goal():
     #Uses the harversine formula to get distance
@@ -213,18 +228,28 @@ def get_distance_and_bearings_from_goal():
     distance = math.sqrt(crow_fly_distance**2 + altitude_difference**2)
 
     return [crow_fly_distance, altitude_difference, bearing, distance]
-
+       
 
 if __name__ == "__main__":
     rospy.init_node("waypoint_handler_server")
     initialise()
-    rospy.Subscriber("/dji_sdk/gps_position",
-                    sensor_msgs.msg.NavSatFix,
-                    handle_current_gps_coordinates)
-    rospy.Subscriber("/dji_sdk/attitude",
-                    geometry_msgs.msg.QuaternionStamped,
-                    handle_attitude_data)
-    waypoint_handler_server()
+    gps_goalpoint_handler_server()
+    #Subscribers
+    rospy.Subscriber(
+        "/dji_sdk/local_position",
+        geometry_msgs.msg.PointStamped,
+        handle_current_cartesian_coordinates)
+    rospy.Subscriber(
+        "/dji_sdk/gps_position",
+        sensor_msgs.msg.NavSatFix,
+        handle_current_gps_coordinates)
+    rospy.Subscriber(
+        "/dji_sdk/attitude",
+        geometry_msgs.msg.QuaternionStamped,
+        handle_attitude_data)
+    #Publishers
     joy_broadcaster()
+    #Actions
+
     rospy.spin()
 

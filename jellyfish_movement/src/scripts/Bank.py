@@ -1,42 +1,39 @@
 #!/usr/bin/env python
 
-"""
-This code provides:
-
-1   A service to set or update a goalpoint for the drone, and have the drone fly to it
-2   A service to cancle the previously set goalpoint for the drone and have it stay still
-3   TODO A service to set a series of waypoints for the drone
-"""
-
-#Fused global position of vehicle, updated by the /dhi_sdk/gps_position topic
-current_latitude = None
-current_longitude = None
-current_altitude = None
-
-initial_altitude = None #In meters
-
-goal_latitude = None
-goal_longitude = None
-goal_altitude = None #In meters
-goal_yaw = None #In radians
-
-max_speed = 5
-min_speed = 0.75
-speed = 5 #Distance between generated intermediate waypoints. Controls the speed of the drone betwwen goalpoints
-moving_towards_goal = False
-
+import jellyfish_movement.msg
 import rospy
-import sensor_msgs.msg
-import std_msgs.msg
-import math
-import tf.transformations
+import actionlib
+import geometry_msgs.msg
 import dji_sdk.srv
+import sensor_msgs.msg
+import tf.transformations
 
-from jellyfish.srv import set_goalpoint
+initial_altitude = None
 
-def initialise():
-    global initial_altitude
+current_altitude = None
+current_longitude = None
+current_latitude = None
 
+current_x = None
+current_y = None
+current_z = None
+current_yaw = None
+
+to_publish = None
+
+def activate_drone():
+    rospy.loginfo("Activating drone...")
+    rospy.wait_for_service("/dji_sdk/activation")
+    try:
+        srv = rospy.ServiceProxy("/dji_sdk/activation", dji_sdk.srv.Activation)
+        if srv().result:
+            rospy.loginfo("Drone activated successfully!")
+        else:
+            rospy.logerr("Drone activation failed! :<")
+    except rospy.ServiceException as e:
+        rospy.logerr(f"Service call failed: {e}")
+
+def request_control_authority():
     rospy.loginfo("Requesting drone control authority...")
     rospy.wait_for_service("/dji_sdk/sdk_control_authority")
     try:
@@ -48,8 +45,58 @@ def initialise():
     except rospy.ServiceException as e:
         rospy.logerr(f"Service call failed: {e}")
 
+def set_local_pos_ref():
     rospy.loginfo("Taking off...")    
     rospy.wait_for_service("/dji_sdk/drone_task_control")
+    try:
+        srv = rospy.ServiceProxy("/dji_sdk/set_local_pos_ref", dji_sdk.srv.SetLocalPosRef)
+        if srv().result:
+            rospy.loginfo("local position reference set")
+        else:
+            rospy.logerr("dammit")
+    except rospy.ServiceException as e:
+        rospy.logerr("dammit")
+
+def get_initial_flight_informations():
+    global initial_altitude
+    global current_altitude
+    global current_longitude
+    global current_latitude
+    global current_yaw
+    global current_x
+    global current_y
+    global current_z
+
+    #Get relevant GPS data
+    try:
+        initial_GPS_coordinates = rospy.client.wait_for_message("/dji_sdk/gps_position", sensor_msgs.msg.NavSatFix, timeout=5)
+        current_altitude = initial_GPS_coordinates.altitude
+        current_latitude = initial_GPS_coordinates.latitude
+        current_longitude = initial_GPS_coordinates.longitude
+        initial_altitude = current_altitude
+        rospy.loginfo("initial GPS coordinates received")
+    except rospy.ServiceException:
+        rospy.logerr("/dji_sdk/gps_position is not being published... Check GPS health?")
+
+    #Get relevant initial coordinates
+    try:
+        initial_cartesian_coordinates = rospy.client.wait_for_message("/dji_sdk/local_position", geometry_msgs.msg.PointStamped, timeout=5)
+        current_x = initial_cartesian_coordinates.point.x
+        current_y = initial_cartesian_coordinates.point.y
+        current_z = initial_cartesian_coordinates.point.z
+    except rospy.ROSException:
+        rospy.logerr("/dji_sdk/local_position is not being published... Check GPS health?")
+
+    #Get relevant orientation data (basically just yaw)
+    try:
+        inititial_attitude = rospy.client.wait_for_message("/dji_sdk/attitude", geometry_msgs.msg.QuaternionStamped, timeout=5)
+        inititial_attitude_quaternion = [inititial_attitude.quaternion.x, inititial_attitude.quaternion.y, inititial_attitude.quaternion.z, inititial_attitude.quaternion.w]
+        current_yaw = tf.transformations.euler_from_quaternion(inititial_attitude_quaternion)[2] #Get yaw in radians
+        rospy.loginfo("initial orientation received")
+    except rospy.ServiceException:
+        rospy.logerr("/dji_sdk/attitude is not being published...")
+
+def take_off():
     try:
         srv = rospy.ServiceProxy("/dji_sdk/drone_task_control", dji_sdk.srv.DroneTaskControl)
         if srv(4).result:
@@ -58,126 +105,202 @@ def initialise():
             rospy.logerr("Failed to take off :<")
     except rospy.ServiceException as e:
         rospy.logerr(f"Service call failed: {e}")
-    initial_coordinates = rospy.client.wait_for_message("/dji_sdk/gps_position", sensor_msgs.msg.NavSatFix)
-    initial_altitude = initial_coordinates.altitude
 
+def initialise():
+    #launching dji_sdk using the dji_sdk launch file would call this already. You can call this just in case
+    #activate_drone()
+    request_control_authority()
+    set_local_pos_ref()
+    get_initial_flight_informations()
+    take_off()
 
-def handle_current_gps_coordinates(msg):
-    global current_latitude 
-    global current_longitude
-    global current_altitude
+def handle_current_cartesian_coordinates(msg):
+    global current_x
+    global current_y
+    global current_z
 
-    current_latitude = msg.latitude
-    current_longitude = msg.longitude
-    current_altitude = msg.altitude
+    current_x = msg.point.x
+    current_y = msg.point.y
+    current_z = msg.point.z
 
-def handle_IMU_data(msg):
-    #Uses IMU data to get yaw of drone.
-    #TODO perhaps can fuse with GPS data in the future?
+def handle_attitude_data(msg):
+    #Uses attitude data to get yaw of drone.
     global current_yaw
-    current_orientation_quaternion = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+
+    current_orientation_quaternion = [msg.quaternion.x, msg.quaternion.y, msg.quaternion.z, msg.quaternion.w]
     current_yaw = tf.transformations.euler_from_quaternion(current_orientation_quaternion)[2] #Get yaw in radians
 
-def handle_set_goalpoint(req):
-    global goal_latitude
-    global goal_longitude
-    global goal_altitude
-    global goal_yaw
-    global speed
-    global moving_towards_goal
+def handle_gps_coordinates(msg):
+    global current_altitude
+    global current_longitude
+    global current_latitude
 
-    goal_latitude = req.latitude
-    goal_longitude = req.longitude
-    goal_altitude = req.altitude
-    goal_yaw = req.yaw
-    speed = req.speed
-    moving_towards_goal = True
-    msg = f"moving towards goalpoint at \nlatitude: {goal_latitude}\nlongitude: {goal_longitude}\naltitude: {goal_altitude}\nyaw: {goal_yaw}\nwith speed {speed}"
-    rospy.loginfo(msg)
-    return msg
-
-def waypoint_handler_server():
-    waypoint_service = rospy.Service("set_goalpoint", set_goalpoint, handle_set_goalpoint)
-    rospy.loginfo("Drone_movement_control Server ready")
+    current_altitude = msg.altitude
+    current_longitude = msg.longitude
+    current_latitude = msg.latitude
 
 def joy_broadcaster():
-    #Broadcasts command to control drone on ddji_sdk/flight_control_setpoint_ENUposition_yaw. Message is a sensor_msgs.msg.Joy message with
-    #the following axes: [X position offset, Y position offset, Z position offset, yaw angle] in ENU ground frame
-    #Currently programmed to move a straight line path
-    global moving_towards_goal
-    global speed
+    #Broadcasts command to control drone on dji_sdk/flight_control_setpoint_ENUposition_yaw. Message is a sensor_msgs.msg.Joy message with
+    #the following axes: [X position offset, Y position offset, Z position, yaw angle] in ENU ground frame
+    global to_publish
 
     update_rate = 5
-    pub = rospy.Publisher("/dji_sdk/flight_control_setpoint_ENUposition_yaw", sensor_msgs.msg.Joy, queue_size=1)
+    pub = rospy.Publisher("dji_sdk/flight_control_setpoint_ENUposition_yaw", sensor_msgs.msg.Joy, queue_size=1)
     r = rospy.Rate(update_rate)
-    goal_reach_timer = 0
     while not rospy.is_shutdown():
-        if moving_towards_goal:
-            if speed < min_speed:
-                speed = min_speed
-            if speed > max_speed:
-                speed = max_speed
-            crow_fly_distance, altitude_difference, bearing, distance = get_distance_and_bearings_from_goal()
-            axes = []
+        if to_publish:
             command = sensor_msgs.msg.Joy()
-            if distance > speed:
-                goal_reach_timer = 0
-                plane_offset = speed * math.cos(math.atan(altitude_difference/crow_fly_distance))
-                z_offset = speed * math.sin(math.atan(altitude_difference/crow_fly_distance))
-                axes.append(plane_offset*math.sin(bearing)) #offset in the x direction for the shortest distance great circle arc
-                axes.append(plane_offset*math.cos(bearing)) #offset in the y direction for the shortest distance great circle arc
-                axes.append(current_altitude-initial_altitude + z_offset) #offset in the z direction
-                axes.append(0)
-            else:
-                goal_reach_timer += 1/update_rate
-                if goal_reach_timer < 5: #If within 5m of goal position, check if the drone remains in that location for 5s
-                    axes.append(crow_fly_distance*math.sin(bearing)) #offset in the x direction for the shortest distance great circle arc
-                    axes.append(crow_fly_distance*math.cos(bearing)) #offset in the y direction for the shortest distance great circle arc
-                    axes.append(goal_altitude-initial_altitude) #offset in the z direction
-                    axes.append(0)
-                else:
-                    rospy.loginfo("drone has reached goal point")
-                    moving_towards_goal = False
-            if axes == []:
-                continue
-            command.axes = axes
+            command.axes = to_publish
             pub.publish(command)
+            to_publish = None
+        r.sleep()
+
+"""
+MoveToCartesianCoordinates action makes use of the /dji_sdk/flight_control_setpoint_ENUposition_yaw 
+topic to control the drone's position. It takes in ENU cartesian coordinates and yaw, 
+a pose stamped topic. The action will move the drone to the 
+coordinates based on the pose stamped topic. Otherwise it will move the drone based on the
+local position reference set by set_local_pos_ref
+Setting a goal on this action will cancel the goal on the MoveToGPSCoordinates action
+"""
+class move_to_cartesian_coordinates_action():
+    _feedback = jellyfish_movement.msg.MoveToCartesianCoordinatesFeedback()
+    _result = jellyfish_movement.msg.MoveToCartesianCoordinatesResult()
+
+    def __init__(self, name):
+        self._action_name = name
+        self._as = actionlib.SimpleActionServer(
+            self._action_name,
+            jellyfish_movement.msg.MoveToCartesianCoordinatesAction,
+            execute_cb = self.execute_cb,
+            auto_start = False)
+        self._as.start()
+        self.sub = None
+        self.x = None
+        self.y = None
+        self.z = None
+        self.yaw = None
+
+    def update_position(self, msg):
+        self.x = msg.pose.position.x
+        self.y = msg.pose.position.y
+        self.z = msg.pose.position.z
+        quaternion = msg.pose.orientation
+        quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+        self.yaw = tf.transformations.euler_from_quaternion(quaternion)[2]
+        
+    def execute_cb(self, goal):
+        global to_publish
+
+        update_rate = 5
+        r = rospy.Rate(update_rate)
+        success = 1
+        try:
+            current_position = rospy.wait_for_message(goal.pose_topic, geometry_msgs.msg.PoseStamped, 5)
+            self.x = current_position.pose.position.x
+            self.y = current_position.pose.position.y
+            self.z = current_position.pose.position.z
+            quaternion = current_position.pose.orientation
+            quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
+            self.yaw = tf.transformations.euler_from_quaternion(quaternion)[2]
+        except rospy.ROSException:
+            rospy.logerr("Could not receive pose_stamped message from topic, or topic is not publishing")
+            self._result.success = 0
+            self._as.set_aborted(self._result)
+            return
+        self.sub =  rospy.Subscriber(
+            goal.pose_topic, 
+            geometry_msgs.msg.PoseStamped,
+            self.update_position)
+        feedback = jellyfish_movement.msg.MoveToCartesianCoordinatesFeedback()
+        inbound_counter = 0
+        while True:
+            if self._as.is_preempt_requested():
+                self.sub.unregister()
+                rospy.loginfo("prempted")
+                success = 0
+                self._result.success = 0
+                self._as.set_preempted(self._result)
+                break
+            x_diff = goal.x_goal - self.x
+            y_diff = goal.y_goal - self.y
+            z_diff = goal.z_goal - self.z
+            z_pub = current_z + z_diff
+            yaw_diff = goal.yaw_goal - self.yaw
+            yaw_pub = current_yaw + yaw_diff
+            axes = [x_diff, y_diff, z_pub, yaw_pub]
+            to_publish = axes
+            feedback.x_diff = x_diff
+            feedback.y_diff = y_diff
+            feedback.z_diff = z_diff
+            self._as.publish_feedback(feedback)
+            rospy.loginfo(f"xdiff: {abs(x_diff) < 1}, y_diff: {abs(y_diff) < 1}, z_diff: {abs(z_diff) < 1}, yaw_diff: {abs(yaw_diff) < (10/180*3.14159)}")
+            if abs(x_diff) < 1 and abs(y_diff) < 1 and abs(z_diff) < 1 and abs(yaw_diff) < (10/180*3.14159):
+                inbound_counter += 1
+                rospy.loginfo(f"inbound counter: {inbound_counter}")
+                if inbound_counter > (update_rate * 3):
+                    break
+            else:
+                inbound_counter = 0
+                rospy.loginfo("out of bounds!")
             r.sleep()
+        if success:
+            self.sub.unregister()
+            self._result.success = 1
+            rospy.loginfo("reached!")
+            self._as.set_succeeded(self._result)
 
+class move_to_gps_coordinates_action():
+    _feedback = jellyfish_movement.msg.MoveToGPSCoordinatesFeedback()
+    _result = jellyfish_movement.msg.MoveToGPSCoordinatesResult()
 
+    def __init__(self, name):
+        self._action_name = name
+        self._as = actionlib.SimpleActionServer(
+            self._action_name,
+            jellyfish_movement.msg.MoveToGPSCoordinatesAction,
+            execute_cb = self.execute_cb,
+            auto_start = False)
+        self._as.start()
+        
+    def execute_cb(self, goal):
+        global to_publish
 
-def get_distance_and_bearings_from_goal():
-    #Uses the harversine formula to get distance
-    current_latitude_rad = current_latitude * math.pi /180
-    goal_latitude_rad = goal_latitude * math.pi /180
-    latitude_difference_rad = (goal_latitude - current_latitude) * math.pi /180
-    longitude_difference_rad = (goal_longitude - current_longitude) * math.pi /180
-    altitude_difference = goal_altitude - current_altitude
-
-    a = ((math.sin(latitude_difference_rad/2)) ** 2) + math.cos(current_latitude_rad) * math.cos(goal_latitude_rad) * ((math.sin(longitude_difference_rad/2)) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    crow_fly_distance = 6371000 * c
-
-    #Get bearings. 0 is North pi/2 is East
-    y = math.sin(longitude_difference_rad) * math.cos(goal_latitude_rad)
-    x = math.cos(current_latitude_rad) * math.sin(goal_latitude_rad) - math.sin(current_latitude_rad) * math.cos(goal_latitude_rad) * math.cos(longitude_difference_rad)
-    bearing = math.atan2(y, x)
-
-    distance = math.sqrt(crow_fly_distance**2 + altitude_difference**2)
-
-    return [crow_fly_distance, altitude_difference, bearing, distance]
-
+        update_rate = 5
+        r = rospy.Rate(update_rate)
+        success = 1
+        inbound_counter = 0
+        while True:
+            if self._as.is_preempt_requested():
+                self.sub.unregister()
+                rospy.loginfo("prempted")
+                success = 0
+                self._result.success = 0
+                self._as.set_preempted(self._result)
+                break
+            
+            r.sleep()
+        if success:
+            self.sub.unregister()
+            self._result.success = 1
+            rospy.loginfo("reached!")
+            self._as.set_succeeded(self._result)
 
 if __name__ == "__main__":
-    rospy.init_node("waypoint_handler_server")
+    rospy.init_node("movement_handler")
+    # Action servers
+    move_to_cartesian_coordinates_server = move_to_cartesian_coordinates_action("cartesian_coordinates_handler_server")
+    move_to_gps_coordinates_server = move_to_gps_coordinates_action("gps_coordinates_handler_server")
     initialise()
-    rospy.Subscriber("/dji_sdk/gps_position",
-                    sensor_msgs.msg.NavSatFix,
-                    handle_current_gps_coordinates)
-    rospy.Subscriber("/dji_sdk/imu",
-                    sensor_msgs.msg.Imu,
-                    handle_IMU_data)
-    waypoint_handler_server()
+    # Subscribers
+    rospy.Subscriber(
+        "/dji_sdk/local_position",
+        geometry_msgs.msg.PointStamped,
+        handle_current_cartesian_coordinates)
+    rospy.Subscriber(
+        "/dji_sdk/attitude",
+        geometry_msgs.msg.QuaternionStamped,
+        handle_attitude_data)
+    # Publishers
     joy_broadcaster()
     rospy.spin()
-
