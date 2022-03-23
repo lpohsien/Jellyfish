@@ -60,6 +60,7 @@ or implied, of Rafael Muñoz Salinas.
 #include <aruco_ros_wrapper/ArucoThresholdConfig.h>
 #include <aruco_ros_wrapper/PixelToPosition.h>
 
+#include <iostream>
 
 using namespace aruco;
 
@@ -154,6 +155,7 @@ class ArucoSimple {
              marker_size, marker_id);
     ROS_INFO("Aruco node will publish pose to TF with %s as parent and %s as child.",
              camera_frame.c_str(), marker_frame.c_str());
+    ROS_WARN("OpenCV: %s", cv::getBuildInformation().c_str());
 
     dyn_rec_server.setCallback(boost::bind(&ArucoSimple::reconf_callback, this, _1, _2));
   }
@@ -197,6 +199,7 @@ class ArucoSimple {
           // only publishing the selected marker
           if (markers[i].id == marker_id) {
             success = true;
+            markers[i].calculateExtrinsics(marker_size, camParam, true);
             tf2::Transform transform = aruco_ros::arucoMarker2Tf(markers[i], rotate_marker_axis_);
             
             geometry_msgs::TransformStamped stampedTransform;
@@ -215,19 +218,20 @@ class ArucoSimple {
             geometry_msgs::PoseStamped poseMsg;
             tf2::convert(stampedTransform, poseMsg);
             pose_pub.publish(poseMsg);
-
+            /*
             geometry_msgs::Vector3Stamped positionMsg;
             positionMsg.header = stampedTransform.header;
             positionMsg.vector = stampedTransform.transform.translation;
             position_pub.publish(positionMsg);
-
+            
             geometry_msgs::PointStamped pixelMsg;
             pixelMsg.header = stampedTransform.header;
             pixelMsg.point.x = markers[i].getCenter().x;
             pixelMsg.point.y = markers[i].getCenter().y;
             pixelMsg.point.z = 0;
             pixel_pub.publish(pixelMsg);
-
+            */
+            /*
             //Publish rviz marker representing the ArUco marker patch
             visualization_msgs::Marker visMarker;
             visMarker.header = stampedTransform.header;
@@ -244,18 +248,22 @@ class ArucoSimple {
             visMarker.color.a = 1.0;
             visMarker.lifetime = ros::Duration(3.0);
             marker_pub.publish(visMarker);
+            */
           }
 
           // but drawing all the detected markers
           markers[i].draw(inImage, cv::Scalar(0, 0, 255), 2);
+          ROS_WARN("Found: %i", markers[i].id);
+          ROS_WARN("Looking for: %i", marker_id);
         }
 
         if (!success) {
           ROS_WARN("Marker not detected in current frame!");
+        } else {
+          ROS_INFO("Marker detected");
         }
 
         //draw a 3d cube in each marker if there is 3d info
-        
         if (camParam.isValid() && marker_size > 0) {
           for (size_t i = 0; i < markers.size(); ++i) {
             CvDrawingUtils::draw3dAxis(inImage, markers[i], camParam);
@@ -302,7 +310,12 @@ class ArucoSimple {
 
     cam_info_received = true;
     cam_info_sub.shutdown();
-    ROS_INFO("Received camera info");
+    if (camParam.isValid()) {
+      ROS_INFO("Received camera info");
+    } else {
+      ROS_WARN("INVALID CAMERA INFO");
+    }
+    
   }
 
   // shifts the last found marker's center to the pixel requested
