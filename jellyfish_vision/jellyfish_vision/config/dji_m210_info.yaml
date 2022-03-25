@@ -1,0 +1,20 @@
+image_width: 640
+image_height: 480
+camera_name: m210
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [539.830584, 0.0, 318.652171, 0.0, 537.673570, 230.810962, 0.0, 0.0, 1.0]
+camera_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 4
+  data: [-0.026308, 0.073702, -0.003552, -0.004733, 0.000000]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [543.976624, 0.0, 315.238582, 0.0, 0.0, 542.994385, 228.810120, 0.0, 0.0, 0.0, 1.0, 0.0]

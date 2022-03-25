@@ -21,29 +21,12 @@ to_publish = False
 
 def initialise():
     global current_gimbal_position
-    rospy.loginfo("Activating drone...")
-    rospy.wait_for_service("/dji_sdk/activation")
     try:
-        srv = rospy.ServiceProxy("/dji_sdk/activation", dji_sdk.srv.Activation)
-        if srv().result:
-            rospy.loginfo("Drone activated successfully!")
-        else:
-            rospy.logerr("Drone activation failed! :<")
-    except rospy.ServiceException as e:
-        rospy.logerr(f"Service call failed: {e}")
-
-    rospy.loginfo("Requesting drone control authority...")
-    rospy.wait_for_service("/dji_sdk/sdk_control_authority")
-    try:
-        srv = rospy.ServiceProxy("/dji_sdk/sdk_control_authority", dji_sdk.srv.SDKControlAuthority)
-        if srv(1).result:
-            rospy.loginfo("Obtained control of the drone!")
-        else:
-            rospy.logerr("Failed to obtain control of the drone :<")
-    except rospy.ServiceException as e:
-        rospy.logerr(f"Service call failed: {e}")
-    initial_gimbal_position = rospy.client.wait_for_message("/dji_sdk/gimbal_angle", geometry_messages.Vector3Stamped)
-    current_gimbal_position = initial_gimbal_position.vector
+        initial_gimbal_position = rospy.client.wait_for_message("/dji_sdk/gimbal_angle", geometry_messages.Vector3Stamped, timeout=5)
+        current_gimbal_position = initial_gimbal_position.vector
+        rospy.loginfo("Got gimbal position from dji_sdk")
+    except rospy.ROSException:
+        rospy.logerr("Failed to get gimbal position from dji_sdk")
 
 class gimbal_angle_control_action():
     _feedback = jellyfish_messages.ControlGimbalFeedback()
@@ -89,6 +72,7 @@ class gimbal_angle_control_action():
             if self._as.is_preempt_requested():
                 rospy.loginfo("preempted")
                 success = False
+                self._as.set_preempted(self._result)
                 break
             feedback.yaw = current_gimbal_position.z
             feedback.roll = current_gimbal_position.x

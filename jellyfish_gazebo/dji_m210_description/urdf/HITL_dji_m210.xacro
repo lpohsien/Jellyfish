@@ -4,23 +4,28 @@
 	<xacro:include filename="$(find dji_m210_description)/urdf/component_snippets.xacro"/>
 	<xacro:include filename="$(find dji_m210_description)/urdf/gimbal/gimbal.xacro"/>
 
-  <!-- Arguments -->
-  <xacro:arg name="hitl_model" default="true"/>
+	<!-- Arguments -->
+	<xacro:arg name="hitl_model" default="true"/>
 
 
-  <!-- Properties -->
-  <xacro:property name="mass" value="2.355" /> <!-- [kg] -->
-  <xacro:property name="mass_rotor" value="0.08" /> <!-- [kg] -->
-  <xacro:property name="arm_length" value="0.17" /> <!-- [m] -->
-  <xacro:property name="rotor_offset_top" value="0.1" /> <!-- [m] -->
-  <xacro:property name="radius_rotor" value="0.195" /> <!-- [m] -->
-  <xacro:property name="sin30" value="0.5" />
-  <xacro:property name="cos30" value="0.866025403784" />
-  <xacro:property name="sqrt2" value="1.4142135623730951" />
+	<!-- Properties -->
+	<xacro:property name="mass" value="2.355" /> <!-- [kg] -->
+	<xacro:property name="mass_rotor" value="0.08" /> <!-- [kg] -->
+	<xacro:property name="arm_length" value="0.17" /> <!-- [m] -->
+	<xacro:property name="rotor_offset_top" value="0.1" /> <!-- [m] -->
+	<xacro:property name="radius_rotor" value="0.195" /> <!-- [m] -->
+	<xacro:property name="sin30" value="0.5" />
+	<xacro:property name="cos30" value="0.866025403784" />
+	<xacro:property name="sqrt2" value="1.4142135623730951" />
 	<xacro:property name="body_width" value="0.3" />
-  <xacro:property name="body_height" value="0.16" />
-
-  <!-- Property Blocks -->
+	<xacro:property name="body_height" value="0.16" />
+	<xacro:property name="gimbal_roll_min_angle" value="-0.45" />
+	<xacro:property name="gimbal_roll_max_angle" value="0.45" />
+	<xacro:property name="gimbal_pitch_min_angle" value="-1.57" />
+	<xacro:property name="gimbal_pitch_max_angle" value="1.57" />
+	<xacro:property name="gimbal_yaw_min_angle" value="-1.57" />
+	<xacro:property name="gimbal_yaw_max_angle" value="1.57" />
+  	<!-- Property Blocks -->
 
 	<!-- materials -->
 	<material name="black">
@@ -195,6 +200,13 @@
 
 	<!--Slap on a gimbal and a camera-->
 
-	<xacro:dji_m210_gimbal/>
+	<xacro:dji_m210_gimbal
+		gimbal_roll_min_angle="${gimbal_roll_min_angle}"
+		gimbal_roll_max_angle="${gimbal_roll_max_angle}"
+		gimbal_pitch_min_angle="${gimbal_pitch_min_angle}"
+		gimbal_pitch_max_angle="${gimbal_pitch_max_angle}"
+		gimbal_yaw_min_angle="${gimbal_yaw_min_angle}"
+		gimbal_yaw_max_angle="${gimbal_yaw_max_angle}"
+		/>
 
 </robot>

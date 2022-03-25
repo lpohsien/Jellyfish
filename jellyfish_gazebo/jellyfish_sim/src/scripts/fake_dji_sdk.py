@@ -1,23 +1,32 @@
 #!/usr/bin/env python  
 
-#TODO: Drone activation service
-
 """
 This node simulates the dji_ros_sdk for SITL use. At the moment, only movement control using /dji_sdk/flight_control_setpoint_ENUposition_yaw
 can be simulated
 """
 
+import std_msgs.msg
 import rospy
 import sensor_msgs.msg
 import math
 import geometry_msgs.msg
 import mav_msgs.msg
 import dji_sdk.srv
+import dji_sdk.msg
+import tf.transformations
+
+GIMBAL_ROLL_MIN_ANGLE = -0.45
+GIMBAL_ROLL_MAX_ANGLE = 0.45
+GIMBAL_PITCH_MIN_ANGLE = -1.57
+GIMBAL_PITCH_MAX_ANGLE = 1.57
+GIMBAL_YAW_MIN_ANGLE = -1.57
+GIMBAL_YAW_MAX_ANGLE = 1.57
 
 local_pos_ref_set = False
 drone_activated = False
 control_authority = False
 command_in_queue = False
+gimbal_command_in_queue = False
 
 # As this uses the equirectangular projection approximation, this latitude allows for the best approximation
 spawn_latitude = 0
@@ -32,6 +41,20 @@ current_pose.orientation.x = 0
 current_pose.orientation.y = 0
 current_pose.orientation.z = 0
 current_pose.orientation.w = 1
+
+current_gimbal_orientation = geometry_msgs.msg.Vector3Stamped()
+current_gimbal_orientation.vector.x = 0
+current_gimbal_orientation.vector.y = 0
+current_gimbal_orientation.vector.z = 0
+
+gimbal_roll_command = std_msgs.msg.Float64()
+gimbal_pitch_command = std_msgs.msg.Float64()
+gimbal_yaw_command = std_msgs.msg.Float64()
+
+gimbal_roll_command.data = 0.0
+gimbal_pitch_command.data = 0.0
+gimbal_yaw_command.data = 0.0
+
 command_trajectory_msg = mav_msgs.msg.CommandTrajectory()
 command_trajectory_msg.position.x = 0
 command_trajectory_msg.position.y = 0
@@ -73,6 +96,26 @@ def handle_current_pose(msg):
     global current_pose
     current_pose = msg
 
+def handle_current_gimbal_pose(msg):
+    global current_gimbal_orientation
+    quaternion = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
+    euler = tf.transformations.euler_from_quaternion(quaternion)
+    current_gimbal_orientation.vector.x = euler[0]
+    current_gimbal_orientation.vector.y = -euler[1]
+    current_gimbal_orientation.vector.z = euler[2]
+
+def handle_gimbal_command(msg):
+    # Currently this only handles the absolute value mode. Dont think that we are using the relative positioning command yet, so we can cross
+    # the bridge when we come to it
+    global gimbal_roll_command
+    global gimbal_pitch_command
+    global gimbal_yaw_command
+    global gimbal_command_in_queue
+
+    gimbal_roll_command.data = msg.roll
+    gimbal_pitch_command.data = -msg.pitch
+    gimbal_yaw_command.data = msg.yaw
+    gimbal_command_in_queue = True
 
 def handle_joy_command_control_setpoint_ENUposition_yaw(msg):
     #Dji's SDK controls the drone by publishing a sensor_msgs/Joy controlVelYawRate msg on /dji_sdk/flight_control_setpoint_ENUposition_yaw
@@ -125,6 +168,18 @@ def local_position_publisher(publisher):
         local_position_message.point.z = current_pose.position.z
         publisher.publish(local_position_message)
 
+def gimbal_position_publisher(publisher):
+    publisher.publish(current_gimbal_orientation)
+
+def gimbal_command_publisher(roll_publisher, pitch_publisher, yaw_publisher):
+    global gimbal_command_in_queue
+
+    if gimbal_command_in_queue:
+        roll_publisher.publish(gimbal_roll_command)
+        pitch_publisher.publish(gimbal_pitch_command)
+        yaw_publisher.publish(gimbal_yaw_command)
+        gimbal_command_in_queue = False
+
 if __name__ == '__main__':
     #Subscribers
     rospy.init_node("fake_dji_sdk")
@@ -135,6 +190,13 @@ if __name__ == '__main__':
     rospy.Subscriber("/dji_sdk/flight_control_setpoint_ENUposition_yaw",
                     sensor_msgs.msg.Joy,
                     handle_joy_command_control_setpoint_ENUposition_yaw)
+    rospy.Subscriber("/dji_m210/gimbal_ground_truth/pose",
+                    geometry_msgs.msg.Pose,
+                    handle_current_gimbal_pose)
+    rospy.Subscriber("/dji_sdk/gimbal_angle_cmd",
+                    dji_sdk.msg.Gimbal,
+                    handle_gimbal_command
+                    )
 
     #Services
     sdk_control_authority_server = rospy.Service("/dji_sdk/sdk_control_authority", dji_sdk.srv.SDKControlAuthority, handle_sdk_control_authority_request)
@@ -142,15 +204,22 @@ if __name__ == '__main__':
     set_local_pos_ref_server = rospy.Service("/dji_sdk/set_local_pos_ref", dji_sdk.srv.SetLocalPosRef, handle_set_local_position_ref_request)
 
     #Publishers
-    r = rospy.Rate(8)
+    r = rospy.Rate(10)
     gps_pub = rospy.Publisher("/dji_sdk/gps_position", sensor_msgs.msg.NavSatFix, queue_size=5)
     command_trajectory_pub = rospy.Publisher("/dji_m210/position_command/trajectory", mav_msgs.msg.CommandTrajectory, queue_size=5)
     attitude_pub = rospy.Publisher("/dji_sdk/attitude", geometry_msgs.msg.QuaternionStamped, queue_size = 5)
     local_position_pub = rospy.Publisher("/dji_sdk/local_position", geometry_msgs.msg.PointStamped, queue_size = 5)
+    gimbal_position_pub = rospy.Publisher("/dji_sdk/gimbal_angle", geometry_msgs.msg.Vector3Stamped, queue_size = 5)
+    gimbal_roll_pub = rospy.Publisher("/dji_m210/gimbal_roll_controller/command", std_msgs.msg.Float64, queue_size = 5)
+    gimbal_pitch_pub = rospy.Publisher("/dji_m210/gimbal_pitch_controller/command", std_msgs.msg.Float64, queue_size = 5)
+    gimbal_yaw_pub = rospy.Publisher("/dji_m210/gimbal_yaw_controller/command", std_msgs.msg.Float64, queue_size = 5)
+     
     while not rospy.is_shutdown():
         gps_publisher(gps_pub)
         command_trajectory_publisher(command_trajectory_pub)
         attitude_publisher(attitude_pub)
         local_position_publisher(local_position_pub)
+        gimbal_position_publisher(gimbal_position_pub)
+        gimbal_command_publisher(gimbal_roll_pub, gimbal_pitch_pub, gimbal_yaw_pub)
         r.sleep()
     rospy.spin()

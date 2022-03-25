@@ -3,7 +3,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:include filename="$(find dji_m210_description)/urdf/gimbal/gimbal_joints.xacro"/>
     <xacro:property name="M_PI" value="3.14"/>
-    <xacro:macro name="dji_m210_gimbal">
+    <xacro:macro name="dji_m210_gimbal" params="gimbal_roll_min_angle gimbal_roll_max_angle gimbal_pitch_min_angle gimbal_pitch_max_angle gimbal_yaw_min_angle gimbal_yaw_max_angle">
         <joint name="gimbal_base_joint" type="fixed">
             <parent link="base_link"/>
             <child link="gimbal_base_plate" />
@@ -37,8 +37,8 @@
             name="gimbal_roll_joint"
             parent="gimbal_base_plate"
             child="gimbal_roll_link"
-            lower_limit="-0.48"
-            upper_limit="0.48"
+            lower_limit="${gimbal_roll_min_angle}"
+            upper_limit="${gimbal_roll_max_angle}"
             axis_xyz="1 0 0"
             origin_xyz="0.05 0 -0.04"
             />
@@ -59,8 +59,8 @@
             name="gimbal_pitch_joint"
             parent="gimbal_roll_link"
             child="gimbal_pitch_link"
-            lower_limit="-0.48"
-            upper_limit="0.48"
+            lower_limit="${gimbal_pitch_min_angle}"
+            upper_limit="${gimbal_pitch_max_angle}"
             axis_xyz="0 1 0"
             origin_xyz="0 0 0"
             />
@@ -81,8 +81,8 @@
             name="gimbal_yaw_joint"
             parent="gimbal_pitch_link"
             child="gimbal_yaw_link"
-            lower_limit="-1.57"
-            upper_limit="1.57"
+            lower_limit="${gimbal_yaw_min_angle}"
+            upper_limit="${gimbal_yaw_max_angle}"
             axis_xyz="0 0 1"
             origin_xyz="0 0 0"
             />
@@ -100,6 +100,37 @@
                 </geometry>
             </visual>
         </link>
+
+        <!-- Mount a generic odometry sensor providing ground truth. -->
+        <xacro:odometry_plugin_macro
+            namespace="${namespace}/gimbal_ground_truth"
+            odometry_sensor_suffix=""
+            parent_link="gimbal_yaw_link"
+            pose_topic="pose"
+            pose_with_covariance_topic="pose_with_covariance"
+            position_topic="position"
+            transform_topic="transform"
+            odometry_topic="odometry"
+            parent_frame_id="world"
+            mass_odometry_sensor="0.00001"
+            measurement_divisor="1"
+            measurement_delay="0"
+            unknown_delay="0.0"
+            noise_normal_position="0 0 0"
+            noise_normal_quaternion="0 0 0"
+            noise_normal_linear_velocity="0 0 0"
+            noise_normal_angular_velocity="0 0 0"
+            noise_uniform_position="0 0 0"
+            noise_uniform_quaternion="0 0 0"
+            noise_uniform_linear_velocity="0 0 0"
+            noise_uniform_angular_velocity="0 0 0"
+            enable_odometry_map="false"
+            odometry_map=""
+            image_scale="">
+            <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001" /> <!-- [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] [kg.m^2] -->
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+        </xacro:odometry_plugin_macro>
+
         <gazebo>
             <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
             </plugin>

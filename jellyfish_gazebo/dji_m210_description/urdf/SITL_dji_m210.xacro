@@ -45,6 +45,12 @@
   <xacro:property name="rolling_moment_coefficient" value="0.000001" />
   <xacro:property name="color" value="DarkGrey" />
   <xacro:property name="sqrt2" value="1.4142135623730951" />
+  <xacro:property name="gimbal_roll_min_angle" value="-0.45" />
+  <xacro:property name="gimbal_roll_max_angle" value="0.45" />
+  <xacro:property name="gimbal_pitch_min_angle" value="-1.57" />
+  <xacro:property name="gimbal_pitch_max_angle" value="1.57" />
+  <xacro:property name="gimbal_yaw_min_angle" value="-1.57" />
+  <xacro:property name="gimbal_yaw_max_angle" value="1.57" />
 
 
   <!-- Property Blocks -->
@@ -235,5 +241,12 @@
 
 	<!--Slap on a gimbal and a camera-->
 
-	<xacro:dji_m210_gimbal/>
+	<xacro:dji_m210_gimbal
+		gimbal_roll_min_angle="${gimbal_roll_min_angle}"
+		gimbal_roll_max_angle="${gimbal_roll_max_angle}"
+		gimbal_pitch_min_angle="${gimbal_pitch_min_angle}"
+		gimbal_pitch_max_angle="${gimbal_pitch_max_angle}"
+		gimbal_yaw_min_angle="${gimbal_yaw_min_angle}"
+		gimbal_yaw_max_angle="${gimbal_yaw_max_angle}"
+		/>
 </robot>

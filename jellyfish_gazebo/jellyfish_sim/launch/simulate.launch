@@ -2,10 +2,9 @@
 
 <launch>
     <!--Arguments for simulator setup-->
-    <arg name="is_SITL" default="true"/>
+    <arg name="is_SITL" default="false"/>
     <arg name="use_basic_controller" default="true"/>
-    <arg name="SITL_world" default="$(find jellyfish_sim)/worlds/SITL.world"/> 
-    <arg name="HITL_world" default="$(find jellyfish_sim)/worlds/HITL.world"/>
+    <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/> 
     <arg name="attitude_controller_parameters" default="$(find jellyfish_sim)/resources/attitude_controller_parameters.yaml"/>
     <arg name="drone_parameters" default="$(find jellyfish_sim)/resources/dji_m210_vehicle_parameters.yaml"/>
 
@@ -28,16 +27,9 @@
     <arg name="platform_world_frame" default="/world"/>
 
     <!--Spawn world-->
-    <group if="$(arg is_SITL)">
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(arg SITL_world)"/> 
-        </include>
-    </group>
-    <group unless="$(arg is_SITL)">
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(arg HITL_world)"/> 
-        </include>
-    </group>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world)"/> 
+    </include>
     
     <!--Spawn landing platform-->
     <group ns="$(arg landing_platform_name)">
