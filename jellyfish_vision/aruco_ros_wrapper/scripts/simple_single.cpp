@@ -155,7 +155,6 @@ class ArucoSimple {
              marker_size, marker_id);
     ROS_INFO("Aruco node will publish pose to TF with %s as parent and %s as child.",
              camera_frame.c_str(), marker_frame.c_str());
-    ROS_WARN("OpenCV: %s", cv::getBuildInformation().c_str());
 
     dyn_rec_server.setCallback(boost::bind(&ArucoSimple::reconf_callback, this, _1, _2));
   }
@@ -218,7 +217,7 @@ class ArucoSimple {
             geometry_msgs::PoseStamped poseMsg;
             tf2::convert(stampedTransform, poseMsg);
             pose_pub.publish(poseMsg);
-            /*
+            
             geometry_msgs::Vector3Stamped positionMsg;
             positionMsg.header = stampedTransform.header;
             positionMsg.vector = stampedTransform.transform.translation;
@@ -230,8 +229,8 @@ class ArucoSimple {
             pixelMsg.point.y = markers[i].getCenter().y;
             pixelMsg.point.z = 0;
             pixel_pub.publish(pixelMsg);
-            */
-            /*
+            
+            
             //Publish rviz marker representing the ArUco marker patch
             visualization_msgs::Marker visMarker;
             visMarker.header = stampedTransform.header;
@@ -248,13 +247,10 @@ class ArucoSimple {
             visMarker.color.a = 1.0;
             visMarker.lifetime = ros::Duration(3.0);
             marker_pub.publish(visMarker);
-            */
           }
 
           // but drawing all the detected markers
           markers[i].draw(inImage, cv::Scalar(0, 0, 255), 2);
-          ROS_WARN("Found: %i", markers[i].id);
-          ROS_WARN("Looking for: %i", marker_id);
         }
 
         if (!success) {

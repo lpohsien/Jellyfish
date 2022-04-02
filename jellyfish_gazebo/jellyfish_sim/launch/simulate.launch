@@ -2,7 +2,7 @@
 
 <launch>
     <!--Arguments for simulator setup-->
-    <arg name="is_SITL" default="false"/>
+    <arg name="is_SITL" default="true"/>
     <arg name="use_basic_controller" default="true"/>
     <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/> 
     <arg name="attitude_controller_parameters" default="$(find jellyfish_sim)/resources/attitude_controller_parameters.yaml"/>

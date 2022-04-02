@@ -13,14 +13,10 @@ import geometry_msgs.msg
 import mav_msgs.msg
 import dji_sdk.srv
 import dji_sdk.msg
-import tf.transformations
+import tf_conversions
+import tf2_ros
 
-GIMBAL_ROLL_MIN_ANGLE = -0.45
-GIMBAL_ROLL_MAX_ANGLE = 0.45
-GIMBAL_PITCH_MIN_ANGLE = -1.57
-GIMBAL_PITCH_MAX_ANGLE = 1.57
-GIMBAL_YAW_MIN_ANGLE = -1.57
-GIMBAL_YAW_MAX_ANGLE = 1.57
+drone_name = "dji_m210"
 
 local_pos_ref_set = False
 drone_activated = False
@@ -41,11 +37,6 @@ current_pose.orientation.x = 0
 current_pose.orientation.y = 0
 current_pose.orientation.z = 0
 current_pose.orientation.w = 1
-
-current_gimbal_orientation = geometry_msgs.msg.Vector3Stamped()
-current_gimbal_orientation.vector.x = 0
-current_gimbal_orientation.vector.y = 0
-current_gimbal_orientation.vector.z = 0
 
 gimbal_roll_command = std_msgs.msg.Float64()
 gimbal_pitch_command = std_msgs.msg.Float64()
@@ -95,14 +86,6 @@ def handle_set_local_position_ref_request(req):
 def handle_current_pose(msg):
     global current_pose
     current_pose = msg
-
-def handle_current_gimbal_pose(msg):
-    global current_gimbal_orientation
-    quaternion = [msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w]
-    euler = tf.transformations.euler_from_quaternion(quaternion)
-    current_gimbal_orientation.vector.x = euler[0]
-    current_gimbal_orientation.vector.y = -euler[1]
-    current_gimbal_orientation.vector.z = euler[2]
 
 def handle_gimbal_command(msg):
     # Currently this only handles the absolute value mode. Dont think that we are using the relative positioning command yet, so we can cross
@@ -168,8 +151,19 @@ def local_position_publisher(publisher):
         local_position_message.point.z = current_pose.position.z
         publisher.publish(local_position_message)
 
-def gimbal_position_publisher(publisher):
-    publisher.publish(current_gimbal_orientation)
+def gimbal_position_publisher(publisher, tf_buffer):
+    gimbal_roll_q = tf_buffer.lookup_transform("dji_m210/gimbal_base_plate", "dji_m210/gimbal_roll_link", rospy.Time()).transform.rotation
+    gimbal_roll = tf_conversions.transformations.euler_from_quaternion([gimbal_roll_q.x, gimbal_roll_q.y, gimbal_roll_q.z, gimbal_roll_q.w])[0]
+    gimbal_pitch_q = tf_buffer.lookup_transform("dji_m210/gimbal_roll_link", "dji_m210/gimbal_pitch_link", rospy.Time()).transform.rotation
+    gimbal_pitch = tf_conversions.transformations.euler_from_quaternion([gimbal_pitch_q.x, gimbal_pitch_q.y, gimbal_pitch_q.z, gimbal_pitch_q.w])[1]
+    gimbal_yaw_q = tf_buffer.lookup_transform("dji_m210/gimbal_pitch_link", "dji_m210/gimbal_yaw_link", rospy.Time()).transform.rotation
+    gimbal_yaw = tf_conversions.transformations.euler_from_quaternion([gimbal_yaw_q.x, gimbal_yaw_q.y, gimbal_yaw_q.z, gimbal_yaw_q.w])[2]
+    gimbal_msg = geometry_msgs.msg.Vector3Stamped()
+    gimbal_msg.header.stamp = rospy.Time.now()
+    gimbal_msg.vector.x = gimbal_roll
+    gimbal_msg.vector.y = -gimbal_pitch
+    gimbal_msg.vector.z = gimbal_yaw
+    publisher.publish(gimbal_msg)
 
 def gimbal_command_publisher(roll_publisher, pitch_publisher, yaw_publisher):
     global gimbal_command_in_queue
@@ -190,9 +184,6 @@ if __name__ == '__main__':
     rospy.Subscriber("/dji_sdk/flight_control_setpoint_ENUposition_yaw",
                     sensor_msgs.msg.Joy,
                     handle_joy_command_control_setpoint_ENUposition_yaw)
-    rospy.Subscriber("/dji_m210/gimbal_ground_truth/pose",
-                    geometry_msgs.msg.Pose,
-                    handle_current_gimbal_pose)
     rospy.Subscriber("/dji_sdk/gimbal_angle_cmd",
                     dji_sdk.msg.Gimbal,
                     handle_gimbal_command
@@ -205,6 +196,8 @@ if __name__ == '__main__':
 
     #Publishers
     r = rospy.Rate(10)
+    tf_buffer = tf2_ros.Buffer()
+    tf_listener = tf2_ros.TransformListener(tf_buffer)
     gps_pub = rospy.Publisher("/dji_sdk/gps_position", sensor_msgs.msg.NavSatFix, queue_size=5)
     command_trajectory_pub = rospy.Publisher("/dji_m210/position_command/trajectory", mav_msgs.msg.CommandTrajectory, queue_size=5)
     attitude_pub = rospy.Publisher("/dji_sdk/attitude", geometry_msgs.msg.QuaternionStamped, queue_size = 5)
@@ -213,13 +206,13 @@ if __name__ == '__main__':
     gimbal_roll_pub = rospy.Publisher("/dji_m210/gimbal_roll_controller/command", std_msgs.msg.Float64, queue_size = 5)
     gimbal_pitch_pub = rospy.Publisher("/dji_m210/gimbal_pitch_controller/command", std_msgs.msg.Float64, queue_size = 5)
     gimbal_yaw_pub = rospy.Publisher("/dji_m210/gimbal_yaw_controller/command", std_msgs.msg.Float64, queue_size = 5)
-     
+    
     while not rospy.is_shutdown():
         gps_publisher(gps_pub)
         command_trajectory_publisher(command_trajectory_pub)
         attitude_publisher(attitude_pub)
         local_position_publisher(local_position_pub)
-        gimbal_position_publisher(gimbal_position_pub)
+        gimbal_position_publisher(gimbal_position_pub, tf_buffer)
         gimbal_command_publisher(gimbal_roll_pub, gimbal_pitch_pub, gimbal_yaw_pub)
         r.sleep()
     rospy.spin()

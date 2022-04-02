@@ -166,10 +166,9 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS 
-  src/scripts/DTLS.py src/scripts/drone_movement_control.py 
-  src/scripts/sandbox.py src/scripts/gimbal.py
-  src/scripts/sandbox.py src/scripts/movement.py
-  src/scripts/sandbox.py src/scripts/drone_pose_publisher.py
+  src/scripts/gimbal.py
+  src/scripts/movement.py
+  src/scripts/drone_pose_publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

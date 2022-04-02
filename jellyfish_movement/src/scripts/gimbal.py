@@ -6,7 +6,6 @@
 #TODO Implement limits on command since the drone's gimbal cannot rotate pass a certain limit
 #TODO Video and camera functions
 
-import dji_sdk.srv
 import math
 import rospy
 import actionlib
@@ -14,13 +13,38 @@ import jellyfish_movement.msg as jellyfish_messages
 import dji_sdk.msg as dji_messages
 import geometry_msgs.msg as geometry_messages
 import numpy as np
+import tf_conversions
+import tf2_ros
 
 current_gimbal_position = None
 current_gimbal_goal = None
 to_publish = False
+drone_name = "djeye_m210" #Default drone name, can be set through param servers
+gimbal_transform = geometry_messages.TransformStamped()
+gimbal_transform.transform.rotation.x = 0
+gimbal_transform.transform.rotation.y = 0
+gimbal_transform.transform.rotation.z = 0
+gimbal_transform.transform.rotation.w = 1
+gimbal_transform.transform.translation.x = 0.1
+gimbal_transform.transform.translation.y = 0
+gimbal_transform.transform.translation.z = 0.15
 
 def initialise():
+    global drone_name
     global current_gimbal_position
+    global gimbal_transform
+    try:
+        drone_name = rospy.get_param("drone_name")
+        gimbal_transform.header.frame_id = f"{drone_name}_base_link"
+        gimbal_transform.child_frame_id = f"{drone_name}_gimbal_rotated"
+    except rospy.ROSException:
+        rospy.logerr(f"Drone name not received, defaulting to '{drone_name}'")
+    try:
+        gimbal_transform.transform.translation.x = rospy.get_param("gimbal_x")
+        gimbal_transform.transform.translation.y = rospy.get_param("gimbal_y")
+        gimbal_transform.transform.translation.z = rospy.get_param("gimbal_z")
+    except rospy.ROSException:
+        rospy.logerr(f"Gimbal position not received, defaulting to ({gimbal_transform.transform.position.x}, {gimbal_transform.transform.position.y}, {gimbal_transform.transform.position.z})")
     try:
         initial_gimbal_position = rospy.client.wait_for_message("/dji_sdk/gimbal_angle", geometry_messages.Vector3Stamped, timeout=5)
         current_gimbal_position = initial_gimbal_position.vector
@@ -101,17 +125,25 @@ def handle_gimbal_angle_update(msg):
     global current_gimbal_position
     current_gimbal_position = msg.vector
 
-def gimbal_command_publisher():
+def gimbal_command_publisher(pub, r):
     global to_publish
 
-    r = rospy.Rate(5)
-    pub = rospy.Publisher("/dji_sdk/gimbal_angle_cmd", dji_messages.Gimbal, queue_size=1)
-    while not rospy.is_shutdown():
-        if to_publish:
-            pub.publish(current_gimbal_goal)
-            to_publish = False
-            r.sleep()
+    if to_publish:
+        pub.publish(current_gimbal_goal)
+        to_publish = False
+    r.sleep()
 
+def gimbal_transform_publisher(tf_pub, r):
+    global gimbal_transform
+
+    quat = tf_conversions.transformations.quaternion_from_euler(current_gimbal_position.x, current_gimbal_position.y, current_gimbal_position.z)
+    gimbal_transform.transform.rotation.x = quat[0]
+    gimbal_transform.transform.rotation.y = quat[1]
+    gimbal_transform.transform.rotation.z = quat[2]
+    gimbal_transform.transform.rotation.w = quat[3]
+    gimbal_transform.header.stamp = rospy.Time.now()
+    tf_pub.sendTransform(gimbal_transform)
+    r.sleep()
 
 if __name__ == "__main__":
     rospy.init_node('gimbal_control')
@@ -120,6 +152,15 @@ if __name__ == "__main__":
     rospy.Subscriber("/dji_sdk/gimbal_angle",
                     geometry_messages.Vector3Stamped,
                     handle_gimbal_angle_update)
-    gimbal_command_publisher()
+
+    #Publishers
+    gimbal_angle_cmd_pub = rospy.Publisher("/dji_sdk/gimbal_angle_cmd", dji_messages.Gimbal, queue_size=5)
+    gimbal_angle_cmd_pub_rate = rospy.Rate(5)
+    gimbal_transform_pub = tf2_ros.TransformBroadcaster()
+    gimbal_transform_pub_rate = rospy.Rate(10)
+    r = rospy.Rate(10)
+    while not rospy.is_shutdown():
+        gimbal_command_publisher(gimbal_angle_cmd_pub, gimbal_angle_cmd_pub_rate)
+        gimbal_transform_publisher(gimbal_transform_pub, gimbal_transform_pub_rate)
     rospy.spin()
         

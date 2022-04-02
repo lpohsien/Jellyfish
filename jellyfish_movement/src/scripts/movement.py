@@ -6,7 +6,7 @@ import actionlib
 import geometry_msgs.msg
 import dji_sdk.srv
 import sensor_msgs.msg
-import tf.transformations
+import tf_conversions
 import math
 
 initial_altitude = None
@@ -65,7 +65,7 @@ def get_initial_flight_informations():
     try:
         inititial_attitude = rospy.client.wait_for_message("/dji_sdk/attitude", geometry_msgs.msg.QuaternionStamped, timeout=5)
         inititial_attitude_quaternion = [inititial_attitude.quaternion.x, inititial_attitude.quaternion.y, inititial_attitude.quaternion.z, inititial_attitude.quaternion.w]
-        current_yaw = tf.transformations.euler_from_quaternion(inititial_attitude_quaternion)[2] #Get yaw in radians
+        current_yaw = tf_conversions.transformations.euler_from_quaternion(inititial_attitude_quaternion)[2] #Get yaw in radians
         rospy.loginfo("initial orientation received")
     except rospy.ServiceException:
         rospy.logerr("/dji_sdk/attitude is not being published...")
@@ -101,7 +101,7 @@ def handle_attitude_data(msg):
     global current_yaw
 
     current_orientation_quaternion = [msg.quaternion.x, msg.quaternion.y, msg.quaternion.z, msg.quaternion.w]
-    current_yaw = tf.transformations.euler_from_quaternion(current_orientation_quaternion)[2] #Get yaw in radians
+    current_yaw = tf_conversions.transformations.euler_from_quaternion(current_orientation_quaternion)[2] #Get yaw in radians
 
 def handle_gps_coordinates(msg):
     global current_altitude
@@ -159,7 +159,7 @@ class move_to_cartesian_coordinates_action():
         self.z = msg.pose.position.z
         quaternion = msg.pose.orientation
         quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
-        self.yaw = tf.transformations.euler_from_quaternion(quaternion)[2]
+        self.yaw = tf_conversions.transformations.euler_from_quaternion(quaternion)[2]
         
     def execute_cb(self, goal):
         global to_publish
@@ -179,7 +179,7 @@ class move_to_cartesian_coordinates_action():
             self.z = current_position.pose.position.z
             quaternion = current_position.pose.orientation
             quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
-            self.yaw = tf.transformations.euler_from_quaternion(quaternion)[2]
+            self.yaw = tf_conversions.transformations.euler_from_quaternion(quaternion)[2]
         except rospy.ROSException:
             rospy.logerr("Could not receive pose_stamped message from topic, or topic is not publishing")
             self._result.success = 0
