@@ -1,0 +1,3 @@
+hedgehog_1_address: 1 # Left of the drone
+hedgehog_2_address: 2 # Right of the drone
+center_of_hedgehogs_relative_to_base_link: [0, 0, 0]

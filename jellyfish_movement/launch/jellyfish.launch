@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<launch>
+    <!--General arguments-->
+    <arg name="drone_name" default="dji_m210"/>
+
+    <!--Camera/ aruco related arguments-->
+    <arg name="camera_info_url" default="file:///$(find jellyfish_vision)/config/$(arg drone_name)_info.yaml"/>
+    <arg name="visualize" default="true"/>
+    <arg name="dictionary" default="ARUCO_MIP_36h12"/>
+    <arg name="marker_id" default="14"/>
+    <arg name="marker_size" default="1"/>
+    <arg name="use_enclosed" default="false"/>
+    <arg name="marker_frame" default="aruco"/>
+    <arg name="use_pose_tracker" default="true"/>
+    <arg name="publish_tf" default="false"/>
+
+    <!--Gimbal related arguments-->
+    <arg name="gimbal_x" value="0.1"/>
+    <arg name="gimbal_y" value="0.0"/>
+    <arg name="gimbal_z" value="0.15"/>
+
+    <!--Marvelmind related arguments-->
+    <arg name="marvelmind_info" value="$(find jellyfish_movement)/config/hedgehog_info.yaml"/>
+
+    <!--Sets ros params-->
+    <param name="drone_name" value="$(arg drone_name)"/>
+    <param name="gimbal_x" value="$(arg gimbal_x)"/>
+    <param name="gimbal_y" value="$(arg gimbal_y)"/>
+    <param name="gimbal_z" value="$(arg gimbal_z)"/>
+    <rosparam command="load" file="$(arg marvelmind_info)"/>
+
+    <!--Launches aruco related nodes
+    <include file="$(find jellyfish_vision)/launch/m210_aruco.launch" >
+        <arg name="drone_name" default="$(arg drone_name)"/>
+        <arg name="camera_info_url" default="$(arg camera_info_url)"/>
+        <arg name="visualize" default="$(arg visualize)"/>
+        <arg name="dictionary" default="$(arg dictionary)"/>
+        <arg name="marker_id" default="$(arg marker_id)"/>
+        <arg name="marker_size" default="$(arg marker_size)"/>
+        <arg name="use_enclosed" default="$(arg use_enclosed)"/>
+        <arg name="marker_frame" default="$(arg marker_frame)"/>
+        <arg name="use_pose_tracker" default="$(arg use_pose_tracker)"/>
+        <arg name="publish_tf" default="$(arg publish_tf)"/>
+    </include>
+    -->
+
+    <!--Launches the drone pose publisher node-->
+    <node pkg="jellyfish_movement" type="drone_pose_publisher.py" name="$(arg drone_name)_drone_pose_publisher"/>
+
+    <!--Launches the drone movement control node-->
+    <node pkg="jellyfish_movement" type="movement.py" name="$(arg drone_name)_drone_movement_controller">
+        <param name="drone_name" value="$(arg drone_name)"/>
+    </node>
+
+    <!--Launches the drone gimbal control node-->
+    <node pkg="jellyfish_movement" type="gimbal.py" name="$(arg drone_name)_drone_gimbal_controller"/>
+</launch>
