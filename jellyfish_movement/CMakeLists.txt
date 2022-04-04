@@ -169,6 +169,8 @@ catkin_install_python(PROGRAMS
   src/scripts/gimbal.py
   src/scripts/movement.py
   src/scripts/drone_pose_publisher.py
+  src/scripts/sandbox.py
+  src/scripts/sandbox2.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
