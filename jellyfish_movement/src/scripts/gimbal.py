@@ -36,7 +36,7 @@ def initialise():
     try:
         drone_name = rospy.get_param("drone_name")
         gimbal_transform.header.frame_id = f"{drone_name}_base_link"
-        gimbal_transform.child_frame_id = f"{drone_name}_gimbal_rotated"
+        gimbal_transform.child_frame_id = f"{drone_name}_camera"
     except rospy.ROSException:
         rospy.logerr(f"Drone name not received, defaulting to '{drone_name}'")
     try:

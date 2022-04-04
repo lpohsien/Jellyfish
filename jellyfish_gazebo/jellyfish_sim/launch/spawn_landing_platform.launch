@@ -11,11 +11,13 @@
     <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
     <arg name="base_link_frame" default="$(arg tf_prefix)/base_link"/>
     <arg name="drone_name" default="dji_m210"/>
+    <arg name="marvelmind_service_vertices" default="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml"/>
+    <arg name="hedgehog_positions" default="$(find jellyfish_sim)/config/hedgehog_positions.yaml"/>
 
-    <!-- Send drone name and service vertices to param server (needed for fake marvelmind to work) -->
+    <!-- Send drone name, hedgehog positions and service vertices to param server (needed for fake marvelmind to work) -->
     <param name="drone_name" type="string" value="$(arg drone_name)"/>
-    <rosparam command="load"
-                file="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml" />
+    <rosparam command="load" file="$(arg marvelmind_service_vertices)"/>
+    <rosparam command="load" file="$(arg hedgehog_positions)"/>
 
     <!-- send the landing platform XML to param server -->
     <param name="robot_description"

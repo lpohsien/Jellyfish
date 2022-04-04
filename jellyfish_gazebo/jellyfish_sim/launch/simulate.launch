@@ -15,7 +15,7 @@
     <arg name="initial_drone_z" default="0.05"/>
     <arg name="initial_drone_roll" default="0"/>
     <arg name="initial_drone_pitch" default="0"/>
-    <arg name="initial_drone_yaw" default="0"/>
+    <arg name="initial_drone_yaw" default="0.7"/>
 
     <!--Arguments for spawning landing platform-->
     <arg name="landing_platform_name" default="landing_platform"/>
@@ -23,8 +23,12 @@
     <arg name="initial_platform_x" default="3"/>
     <arg name="initial_platform_y" default="3"/>
     <arg name="initial_platform_z" default="0"/>
-    <arg name="initial_platform_yaw" default="0.0" />
+    <arg name="initial_platform_yaw" default="0.7" />
     <arg name="platform_world_frame" default="/world"/>
+
+    <!--Marvelmind related arguments-->
+    <arg name="marvelmind_service_vertices" default="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml"/>
+    <arg name="hedgehog_positions" default="$(find jellyfish_sim)/config/hedgehog_positions.yaml"/>
 
     <!--Spawn world-->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -42,6 +46,8 @@
             <arg name="yaw"   default="$(arg initial_platform_yaw)" />
             <arg name="world_frame" default="$(arg platform_world_frame)"/>
             <arg name="drone_name" default="$(arg drone_name)"/>
+            <arg name="marvelmind_service_vertices" default="$(arg marvelmind_service_vertices)"/>
+            <arg name="hedgehog_positions" default="$(arg hedgehog_positions)"/>
         </include>
     </group>
 

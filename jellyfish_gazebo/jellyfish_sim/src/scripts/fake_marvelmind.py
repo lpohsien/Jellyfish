@@ -2,8 +2,9 @@
 
 import rospy
 import geometry_msgs.msg
-import jellyfish_sim.msg
 import numpy as np
+import marvelmind_nav.msg
+import tf_conversions
 
 landing_platform_pose = geometry_msgs.msg.Pose()
 drone_pose = geometry_msgs.msg.Pose()
@@ -86,16 +87,20 @@ class service_zone:
             r[0]*q[2]+r[1]*q[3]+r[2]*q[0]-r[3]*q[1],
             r[0]*q[3]-r[1]*q[2]+r[2]*q[1]+r[3]*q[0]]
 
-    def get_relative_position_of_drone_to_platform(self):
-        #Gets the transformation from the platform to the drone, and rotates it  by the conjugate of the orientation 
-        #quaternion of the landing platform
-        relative_x = drone_pose.position.x - landing_platform_pose.position.x
-        relative_y = drone_pose.position.y - landing_platform_pose.position.y 
-        relative_z = drone_pose.position.z - landing_platform_pose.position.z
-        r = [0, relative_x, relative_y, relative_z]
+    def get_relative_pose_of_drone_to_platform(self):
+        # Rotates both the drone position and the platform position by the orientation of the platform, and finds the relative position between them
+        # This produces the distance of the drone from the platform in a coordinate frame relative to the platform
+        # Finds the relative orientation of the drone to the platform (see https://www.mathworks.com/matlabcentral/answers/415936-angle-between-2-quaternions#answer_333895)
+        landing_platform_position = [0, landing_platform_pose.position.x, landing_platform_pose.position.y, landing_platform_pose.position.z]
         q = [landing_platform_pose.orientation.w, landing_platform_pose.orientation.x, landing_platform_pose.orientation.y, landing_platform_pose.orientation.z]
         q_conj = [q[0],-1*q[1],-1*q[2],-1*q[3]]
-        return self.quaternion_mult(self.quaternion_mult(q_conj,r),q)[1:]
+        transformed_landing_platform_position =  self.quaternion_mult(self.quaternion_mult(q_conj,landing_platform_position),q)[1:]
+        drone_position = [0, drone_pose.position.x, drone_pose.position.y, drone_pose.position.z]
+        transformed_drone_position = self.quaternion_mult(self.quaternion_mult(q_conj,drone_position),q)[1:]
+        drone_q = [drone_pose.orientation.w, drone_pose.orientation.x, drone_pose.orientation.y, drone_pose.orientation.z]
+        transformed_rotation = self.quaternion_mult(q_conj, drone_q)
+        transformed_rotation = [transformed_rotation[1], transformed_rotation[2], transformed_rotation[3], transformed_rotation[0]] # Rotate to ros convension
+        return ([transformed_drone_position[i] - transformed_landing_platform_position[i] for i in range(3)], transformed_rotation)
 
     def within(self, coordinates):
         #This method assumes that the position of the drone is already transformed to the vector space relative to the landing platform
@@ -133,24 +138,76 @@ def setup_service_area():
         service_area = service_zone(vertices_processed)
     else:
         rospy.logerr("Cannot find rosparam 'service_vertices' on parameter server. Might want to check that")
+        raise Exception
+
+#[w, x, y, z]
+def quaternion_mult(q, r):
+    return [r[0]*q[0]-r[1]*q[1]-r[2]*q[2]-r[3]*q[3],
+        r[0]*q[1]+r[1]*q[0]-r[2]*q[3]+r[3]*q[2],
+        r[0]*q[2]+r[1]*q[3]+r[2]*q[0]-r[3]*q[1],
+        r[0]*q[3]-r[1]*q[2]+r[2]*q[1]+r[3]*q[0]]
+
+def rotate_vector(v, q):
+    q_conj = [q[0],-1*q[1],-1*q[2],-1*q[3]]
+    v = [0, v[0], v[1], v[2]]
+    transformed_v = quaternion_mult(quaternion_mult(q_conj,v),q)[1:]
+    return transformed_v
 
 def marvelmind_publisher():
-    update_rate = 12
-    pub = rospy.Publisher("/hedge_pos", jellyfish_sim.msg.hedge_pos, queue_size = 1)
+    if rospy.has_param("hedgehog_positions"):
+        hedgehog_positions = rospy.get_param("hedgehog_positions")
+    else:
+        rospy.logerr("Cannot find rosparam 'hedgehog_positions' on parameter server. Might want to check that")
+        raise Exception
+    update_rate = 10
+    hedge_pos_pub = rospy.Publisher("/hedge_pos", marvelmind_nav.msg.hedge_pos, queue_size = 1)
+    hedge_pos_a_pub = rospy.Publisher("/hedge_pos_a", marvelmind_nav.msg.hedge_pos_a, queue_size = 1)
+    hedge_pos_ang_pub = rospy.Publisher("/hedge_pos_ang", marvelmind_nav.msg.hedge_pos_ang, queue_size = 1)
     r = rospy.Rate(update_rate)
     while not rospy.is_shutdown():
         #Project the point onto the plane of the landing platform and check if it falls within the service area
-        relative_position = service_area.get_relative_position_of_drone_to_platform()
+        relative_position, relative_rotation = service_area.get_relative_pose_of_drone_to_platform()
         projected_position = point(relative_position[0], relative_position[1])
         if service_area.within(projected_position):
-            hedge_msg = jellyfish_sim.msg.hedge_pos()
-            hedge_msg.timestamp_ms = round(rospy.get_time() * 1000)
-            hedge_msg.x_m = relative_position[0]
-            hedge_msg.y_m = relative_position[1]
-            hedge_msg.z_m = relative_position[2]
-            hedge_msg.flags = np.uint8(0)
-            pub.publish(hedge_msg)
-        
+            # For hedgehog and hedge_pos_a
+            for hedgehog_position in hedgehog_positions:
+                # hedgehog coordinates = [{add}, {x}, {y}, {z}]
+                q = [relative_rotation[3], relative_rotation[0], relative_rotation[1], relative_rotation[2]]
+                hedge_pos_relative_to_drone = hedgehog_position[1:]
+                hedge_pos_relative_to_drone_rotated = rotate_vector(hedge_pos_relative_to_drone, q)
+                hedge_pos_relative_to_beacon_x = relative_position[0] + hedge_pos_relative_to_drone_rotated[0]
+                hedge_pos_relative_to_beacon_y = relative_position[1] + hedge_pos_relative_to_drone_rotated[1]
+                hedge_pos_relative_to_beacon_z = relative_position[2] + hedge_pos_relative_to_drone_rotated[2]
+
+                hedge_msg = marvelmind_nav.msg.hedge_pos()
+                hedge_msg.timestamp_ms = round(rospy.get_time() * 1000)
+                hedge_msg.x_m = hedge_pos_relative_to_beacon_x
+                hedge_msg.y_m = hedge_pos_relative_to_beacon_y
+                hedge_msg.z_m = hedge_pos_relative_to_beacon_z
+                hedge_msg.flags = np.uint8(0)
+                hedge_pos_pub.publish(hedge_msg)
+
+                hedge_pos_a_msg = marvelmind_nav.msg.hedge_pos_a()
+                hedge_pos_a_msg.timestamp_ms = round(rospy.get_time() * 1000)
+                hedge_pos_a_msg.x_m = hedge_pos_relative_to_beacon_x
+                hedge_pos_a_msg.y_m = hedge_pos_relative_to_beacon_y
+                hedge_pos_a_msg.z_m = hedge_pos_relative_to_beacon_z
+                hedge_pos_a_msg.flags = np.uint8(0)
+                hedge_pos_a_msg.address = np.uint8(hedgehog_position[0])
+                hedge_pos_a_pub.publish(hedge_pos_a_msg)
+
+            # For hedge_pos_ang
+            hedge_ang_msg = marvelmind_nav.msg.hedge_pos_ang()
+            hedge_ang_msg.timestamp_ms = round(rospy.get_time() * 1000)
+            hedge_ang_msg.x_m = relative_position[0]
+            hedge_ang_msg.y_m = relative_position[1]
+            hedge_ang_msg.z_m = relative_position[2]
+            hedge_ang_msg.flags = np.uint8(0)
+            hedge_ang_msg.angle = tf_conversions.transformations.euler_from_quaternion(relative_rotation)[2]
+            hedge_pos_ang_pub.publish(hedge_ang_msg)
+
+            # For hedge_pos_a
+
         r.sleep()
 
 

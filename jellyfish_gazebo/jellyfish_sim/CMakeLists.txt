@@ -5,9 +5,13 @@ find_package(catkin REQUIRED COMPONENTS
 	gazebo_ros
 	rviz_visual_tools
 	tf2
+	tf2_ros
+	tf_conversions
 	rospy
 	dji_sdk
 	message_generation
+	geometry_msgs
+	marvelmind_nav
 )
 
 add_message_files(
@@ -30,7 +34,6 @@ catkin_package(
 	robot_state_publisher
 	dji_m210_controllers_gazebo
 	rotors_gazebo_plugins
-	tf2
 	rospy
 	mav_msgs
 	message_runtime

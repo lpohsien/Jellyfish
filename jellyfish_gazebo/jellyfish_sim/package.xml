@@ -14,6 +14,9 @@
   <build_depend>tf2</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>mav_msgs</build_depend>
+  <build_depend>marvelmind_nav</build_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>rotors_gazebo_plugins</exec_depend>
@@ -26,6 +29,8 @@
   <exec_depend>rviz</exec_depend>
   <exec_depend>xacro</exec_depend>
   <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf_conversions</exec_depend>
   <exec_depend>rotors_control</exec_depend>
   <exec_depend>rotors_gazebo</exec_depend>
   <exec_depend>mav_msgs</exec_depend>
@@ -33,6 +38,7 @@
   <exec_depend>dji_sdk</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>position_controllers</exec_depend>
+  <exec_depend>marvelmind_nav</exec_depend>
   
   <depend>gazebo_ros</depend>
   <export>

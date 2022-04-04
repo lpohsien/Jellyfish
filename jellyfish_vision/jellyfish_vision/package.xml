@@ -51,6 +51,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>aruco_ros_wrapper</build_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
   <build_export_depend>aruco_ros_wrapper</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>aruco_ros_wrapper</exec_depend>
@@ -59,7 +60,10 @@
   <exec_depend>video_stream_opencv</exec_depend>
   <exec_depend>image_view</exec_depend>
   <exec_depend>image_proc</exec_depend>
-
+  <exec_depend>tf_conversions</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
