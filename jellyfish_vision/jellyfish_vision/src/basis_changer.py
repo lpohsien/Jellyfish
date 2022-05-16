@@ -10,6 +10,11 @@ new_basis = np.array([
     [1, 0, 0], 
     [0, 0, 1]])
 
+newer_basis = np.array([
+    [0, -1, 0], 
+    [1, 0, 0], 
+    [0, 0, 1]])
+
 # https://stackoverflow.com/questions/39098154/switch-chirality-of-a-quaternion-in-code Refer to this if the new_basis vector changes
 def change_basis(msg, callback_args):
     tf_pub = callback_args[0]
@@ -31,7 +36,7 @@ def change_basis(msg, callback_args):
     tf_msg.transform.rotation.z = -msg.pose.orientation.z
     tf_msg.transform.rotation.w = msg.pose.orientation.w
     tf_pub.sendTransform(tf_msg)
-
+    print(newer_basis @ tvec)
 
 
 if __name__ == "__main__":

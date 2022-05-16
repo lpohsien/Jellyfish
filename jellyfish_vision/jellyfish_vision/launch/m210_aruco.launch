@@ -36,6 +36,6 @@
     <remap from="image" to="$(arg drone_name)_aruco_node/result"/>
   </node>
 
-  <node pkg="jellyfish_vision" type="basis_changer.py" name="aruco_rotater"/>
+  <!--<node pkg="jellyfish_vision" type="basis_changer.py" name="aruco_rotater"/>-->
 
 </launch>

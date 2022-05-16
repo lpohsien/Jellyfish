@@ -20,10 +20,10 @@
     <!--Arguments for spawning landing platform-->
     <arg name="landing_platform_name" default="landing_platform"/>
     <arg name="landing_platform_model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
-    <arg name="initial_platform_x" default="3"/>
+    <arg name="initial_platform_x" default="2"/>
     <arg name="initial_platform_y" default="3"/>
     <arg name="initial_platform_z" default="0"/>
-    <arg name="initial_platform_yaw" default="0.7" />
+    <arg name="initial_platform_yaw" default="0.0" />
     <arg name="platform_world_frame" default="/world"/>
 
     <!--Marvelmind related arguments-->

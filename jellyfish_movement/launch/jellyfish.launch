@@ -30,6 +30,7 @@
     <rosparam command="load" file="$(arg marvelmind_info)"/>
 
     <!--Launches aruco related nodes
+
     <include file="$(find jellyfish_vision)/launch/m210_aruco.launch" >
         <arg name="drone_name" default="$(arg drone_name)"/>
         <arg name="camera_info_url" default="$(arg camera_info_url)"/>
@@ -47,11 +48,11 @@
     <!--Launches the drone pose publisher node-->
     <node pkg="jellyfish_movement" type="drone_pose_publisher.py" name="$(arg drone_name)_drone_pose_publisher"/>
     
-    <!--Launches the drone movement control node
-    <node pkg="jellyfish_movement" type="sandbox.py" name="$(arg drone_name)_drone_movement_controller">
+    <!--Launches the drone movement control node-->
+    <node pkg="jellyfish_movement" type="movement.py" name="$(arg drone_name)_drone_movement_controller">
         <param name="drone_name" value="$(arg drone_name)"/>
-    </node>-->
+    </node>
 
-    <!--Launches the drone gimbal control node
-    <node pkg="jellyfish_movement" type="gimbal.py" name="$(arg drone_name)_drone_gimbal_controller"/>-->
+    <!--Launches the drone gimbal control node-->
+    <node pkg="jellyfish_movement" type="gimbal.py" name="$(arg drone_name)_drone_gimbal_controller"/>
 </launch>

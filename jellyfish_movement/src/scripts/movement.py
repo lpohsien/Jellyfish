@@ -8,6 +8,7 @@ import dji_sdk.srv
 import sensor_msgs.msg
 import tf_conversions
 import math
+import numpy as np
 
 initial_altitude = None
 
@@ -87,15 +88,6 @@ def initialise():
     get_initial_flight_informations()
     take_off()
 
-def handle_current_cartesian_coordinates(msg):
-    global current_x
-    global current_y
-    global current_z
-
-    current_x = msg.point.x
-    current_y = msg.point.y
-    current_z = msg.point.z
-
 def handle_attitude_data(msg):
     #Uses attitude data to get yaw of drone.
     global current_yaw
@@ -160,9 +152,11 @@ class move_to_cartesian_coordinates_action():
         quaternion = msg.pose.orientation
         quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
         self.yaw = tf_conversions.transformations.euler_from_quaternion(quaternion)[2]
+        rospy.loginfo(f"q = {quaternion}")
         
     def execute_cb(self, goal):
         global to_publish
+        rospy.loginfo("Executing")
 
         # Cancels Move_to_gps_coordinates_action action
         client = actionlib.SimpleActionClient(
@@ -199,21 +193,25 @@ class move_to_cartesian_coordinates_action():
                 self._result.success = 0
                 self._as.set_preempted(self._result)
                 break
-            x_diff = goal.x_goal - self.x
-            y_diff = goal.y_goal - self.y
-            z_diff = goal.z_goal - self.z
+            x_diff_raw = goal.x_goal - self.x
+            y_diff_raw = goal.y_goal - self.y
+            z_diff_raw = goal.z_goal - self.z
             current_z = current_altitude - initial_altitude
-            z_pub = current_z + z_diff
-            yaw_diff = goal.yaw_goal - self.yaw
-            yaw_pub = current_yaw + yaw_diff
-            axes = [x_diff, y_diff, z_pub, yaw_pub]
+            z_pub = current_z + z_diff_raw
+            yaw_diff_raw = goal.yaw_goal - self.yaw # Relatice to the coordinate frame of the pose publisher. The yaw diff relative to the drone is hence the negative of this
+            yaw_diff = yaw_diff_raw
+            x_diff = math.cos(yaw_diff - current_yaw) * x_diff_raw + math.sin(yaw_diff - current_yaw) * y_diff_raw
+            y_diff = -math.sin(yaw_diff - current_yaw) * x_diff_raw + math.cos(yaw_diff - current_yaw) * y_diff_raw
+            yaw_pub = current_yaw - yaw_diff
+            axes = [x_diff, y_diff, z_pub, yaw_pub] #yaw pub is kinda unstable and hence disabled. Replace 0 with yaw_pub for yaw control relative to pose being published
             to_publish = axes
             feedback.x_diff = x_diff
             feedback.y_diff = y_diff
-            feedback.z_diff = z_diff
+            feedback.z_diff = z_diff_raw
             self._as.publish_feedback(feedback)
-            rospy.loginfo(f"xdiff: {abs(x_diff) < 1}, y_diff: {abs(y_diff) < 1}, z_diff: {abs(z_diff) < 1}, yaw_diff: {abs(yaw_diff) < (10/180*3.14159)}")
-            if abs(x_diff) < 1 and abs(y_diff) < 1 and abs(z_diff) < 1 and abs(yaw_diff) < (10/180*3.14159):
+            rospy.loginfo(f"yaw= {self.yaw}")
+            rospy.loginfo(f"xdiff: {x_diff}, y_diff: {y_diff}, z_diff: {abs(z_diff_raw) < 1}, yaw_diff: {yaw_diff}")
+            if abs(x_diff) < 1 and abs(y_diff) < 1 and abs(z_diff_raw) < 1 and abs(yaw_diff) < (10/180*3.14159):
                 inbound_counter += 1
                 rospy.loginfo(f"inbound counter: {inbound_counter}")
                 if inbound_counter > (update_rate * 3):
@@ -344,10 +342,6 @@ if __name__ == "__main__":
     move_to_gps_coordinates_server = move_to_gps_coordinates_action("gps_coordinates_handler_server")
     initialise()
     # Subscribers
-    rospy.Subscriber(
-        "/dji_sdk/local_position",
-        geometry_msgs.msg.PointStamped,
-        handle_current_cartesian_coordinates)
     rospy.Subscriber(
         "/dji_sdk/attitude",
         geometry_msgs.msg.QuaternionStamped,
