@@ -30,7 +30,7 @@ def activate_drone():
         else:
             rospy.logerr("Drone activation failed! :<")
     except rospy.ServiceException as e:
-        rospy.logerr(f"Service call failed: {e}")
+        rospy.logerr("Service call failed: {}".format(e))
 
 def request_control_authority():
     rospy.loginfo("Requesting drone control authority...")
@@ -42,7 +42,7 @@ def request_control_authority():
         else:
             rospy.logerr("Failed to obtain control of the drone :<")
     except rospy.ServiceException as e:
-        rospy.logerr(f"Service call failed: {e}")
+        rospy.logerr("Service call failed: {}".format(e))
 
 def get_initial_flight_informations():
     global initial_altitude
@@ -79,7 +79,7 @@ def take_off():
         else:
             rospy.logerr("Failed to take off :<")
     except rospy.ServiceException as e:
-        rospy.logerr(f"Service call failed: {e}")
+        rospy.logerr("Service call failed: {}".format(e))
 
 def initialise():
     #launching dji_sdk using the dji_sdk launch file would call this already. You can call this just in case
@@ -152,7 +152,7 @@ class move_to_cartesian_coordinates_action():
         quaternion = msg.pose.orientation
         quaternion = [quaternion.x, quaternion.y, quaternion.z, quaternion.w]
         self.yaw = tf_conversions.transformations.euler_from_quaternion(quaternion)[2]
-        rospy.loginfo(f"q = {quaternion}")
+        rospy.loginfo("q = {}".format(quaternion))
         
     def execute_cb(self, goal):
         global to_publish
@@ -209,11 +209,11 @@ class move_to_cartesian_coordinates_action():
             feedback.y_diff = y_diff
             feedback.z_diff = z_diff_raw
             self._as.publish_feedback(feedback)
-            rospy.loginfo(f"yaw= {self.yaw}")
-            rospy.loginfo(f"xdiff: {x_diff}, y_diff: {y_diff}, z_diff: {abs(z_diff_raw) < 1}, yaw_diff: {yaw_diff}")
+            rospy.loginfo("yaw= {}".format(self.yaw))
+            rospy.loginfo("xdiff: {}, y_diff: {}, z_diff: {}, yaw_diff: {}".format(x_diff, y_diff,(z_diff_raw) < 1), yaw_diff)
             if abs(x_diff) < 1 and abs(y_diff) < 1 and abs(z_diff_raw) < 1 and abs(yaw_diff) < (10/180*3.14159):
                 inbound_counter += 1
-                rospy.loginfo(f"inbound counter: {inbound_counter}")
+                rospy.loginfo("inbound counter: {}".format(inbound_counter))
                 if inbound_counter > (update_rate * 3):
                     break
             else:
@@ -305,7 +305,7 @@ class move_to_gps_coordinates_action():
                 to_publish = axes
                 if altitude_difference < 1 :
                     inbound_counter += 1
-                    rospy.loginfo(f"inbound counter: {inbound_counter}")
+                    rospy.loginfo("inbound counter: {}".format(inbound_counter))
                     if inbound_counter > (update_rate * 3):
                         rospy.loginfo("Altitude reached, flying towards goal gps coordinates...")
                         inbound_counter = 0
@@ -319,7 +319,7 @@ class move_to_gps_coordinates_action():
                 to_publish = axes
                 if crow_fly_distance < 1 and altitude_difference < 1:
                     inbound_counter += 1
-                    rospy.loginfo(f"inbound counter: {inbound_counter}")
+                    rospy.loginfo("inbound counter: {}".format(inbound_counter))
                     if inbound_counter > (update_rate * 3):
                         break
                 else:
@@ -329,7 +329,7 @@ class move_to_gps_coordinates_action():
             feedback.y_diff = y_diff
             feedback.z_diff = altitude_difference
             self._as.publish_feedback(feedback)
-            rospy.loginfo(f"xdiff: {abs(x_diff) < 1}, y_diff: {abs(y_diff) < 1}, z_diff: {altitude_difference}")
+            rospy.loginfo("xdiff: {}, y_diff: {}, z_diff: {}".format(abs(x_diff) < 1, abs(y_diff) < 1, altitude_difference))
             r.sleep()
         if success:
             rospy.loginfo("Reached destination!")

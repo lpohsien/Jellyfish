@@ -35,16 +35,16 @@ def initialise():
     global gimbal_transform
     try:
         drone_name = rospy.get_param("drone_name")
-        gimbal_transform.header.frame_id = f"{drone_name}_base_link"
-        gimbal_transform.child_frame_id = f"{drone_name}_camera"
+        gimbal_transform.header.frame_id = "{}_base_link".format(drone_name)
+        gimbal_transform.child_frame_id = "{}_camera".format(drone_name)
     except rospy.ROSException:
-        rospy.logerr(f"Drone name not received, defaulting to '{drone_name}'")
+        rospy.logerr("Drone name not received, defaulting to '{}'".format(drone_name))
     try:
         gimbal_transform.transform.translation.x = rospy.get_param("gimbal_x")
         gimbal_transform.transform.translation.y = rospy.get_param("gimbal_y")
         gimbal_transform.transform.translation.z = rospy.get_param("gimbal_z")
     except rospy.ROSException:
-        rospy.logerr(f"Gimbal position not received, defaulting to ({gimbal_transform.transform.position.x}, {gimbal_transform.transform.position.y}, {gimbal_transform.transform.position.z})")
+        rospy.logerr("Gimbal position not received, defaulting to ({}, {}, {})".format(gimbal_transform.transform.position.x, gimbal_transform.transform.position.y, gimbal_transform.transform.position.z))
     try:
         initial_gimbal_position = rospy.client.wait_for_message("/dji_sdk/gimbal_angle", geometry_messages.Vector3Stamped, timeout=5)
         current_gimbal_position = initial_gimbal_position.vector

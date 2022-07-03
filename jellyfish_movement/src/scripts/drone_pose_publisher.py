@@ -53,18 +53,18 @@ def marvelmind_pose_publisher(pub, r):
     if to_publish_marvelmind_pose:
         marvelmind_pose = geometry_msgs.msg.PoseStamped()
         marvelmind_pose.header.stamp = rospy.Time.now()
-        marvelmind_pose.header.frame_id = f"{drone_name}_to_marvelmind"
+        marvelmind_pose.header.frame_id = "{}_to_marvelmind".format(drone_name)
         hedgehog_1_coordinates = hedgehog_coordinates[hedgehog_1_address]
         hedgehog_2_coordinates = hedgehog_coordinates[hedgehog_2_address]
         hedgehog_center = [(hedgehog_1_coordinates[i] + hedgehog_2_coordinates[i])/2 for i in range(3)]
         hedgehog_vector = [(hedgehog_2_coordinates[i] - hedgehog_1_coordinates[i]) for i in range(3)]
         try:
             hedgehog_roll =  math.atan(hedgehog_vector[2]/hedgehog_vector[0])
-        except DivisionByZero:
+        except (DivisionByZero, ZeroDivisionError):
             hedgehog_roll = math.pi
         try:
             hedgehog_yaw =  math.atan(hedgehog_vector[1]/hedgehog_vector[0])
-        except DivisionByZero:
+        except (DivisionByZero, ZeroDivisionError):
             hedgehog_yaw = math.pi
         #pitch is assumed to be 0, since we cannot get that info from the marvelmind beacons (and we dont need it anyway)
         hedgehog_pitch = 0
@@ -82,7 +82,7 @@ def marvelmind_pose_publisher(pub, r):
 
 def aruco_pose_publisher(pub, tf_Buffer, r):
     try:
-        trans = tf_Buffer.lookup_transform(f"{drone_name}_base_link", f"{drone_name}_aruco_rotated", rospy.Time())
+        trans = tf_Buffer.lookup_transform("{}_base_link".format(drone_name), "{}_aruco_rotated".format(drone_name), rospy.Time())
         pose_msg = geometry_msgs.msg.PoseStamped()
         pose_msg.header.stamp = rospy.Time.now()
         pose_msg.pose.orientation = trans.transform.rotation
@@ -109,6 +109,7 @@ if __name__ == "__main__":
     tf_Buffer = tf2_ros.Buffer()
     tf_listener = tf2_ros.TransformListener(tf_Buffer)
     marvelmind_pose_pub  = rospy.Publisher("marvelmind_pose", geometry_msgs.msg.PoseStamped, queue_size=1)
+    rospy.loginfo("Publishing to marvelmind_pose")
     marvelmind_pose_pub_rate = rospy.Rate(5)
     aruco_pose_pub = rospy.Publisher("aruco_pose", geometry_msgs.msg.PoseStamped, queue_size=1)
     aruco_pose_pub_rate = rospy.Rate(5)

@@ -130,8 +130,8 @@ def update_drone_pose(msg):
 def setup_service_area():
     global service_area
 
-    if rospy.has_param("service_vertices"):
-        vertices = rospy.get_param("service_vertices")
+    if rospy.has_param("/landing_platform/service_vertices"):
+        vertices = rospy.get_param("/landing_platform/service_vertices")
         vertices_processed = []
         for vertices in vertices:
             vertices_processed.append(point(vertices[0], vertices[1]))
@@ -154,8 +154,8 @@ def rotate_vector(v, q):
     return transformed_v
 
 def marvelmind_publisher():
-    if rospy.has_param("hedgehog_positions"):
-        hedgehog_positions = rospy.get_param("hedgehog_positions")
+    if rospy.has_param("/landing_platform/hedgehog_positions"):
+        hedgehog_positions = rospy.get_param("/landing_platform/hedgehog_positions")
     else:
         rospy.logerr("Cannot find rosparam 'hedgehog_positions' on parameter server. Might want to check that")
         raise Exception
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     #Subscribers
     #Check if landing platform pose is being published. If so, subscribe
     try:
-        rospy.client.wait_for_message("ground_truth/pose", geometry_msgs.msg.Pose, timeout=3)
+        rospy.client.wait_for_message("/landing_platform/ground_truth/pose", geometry_msgs.msg.Pose, timeout=3)
     except:
         rospy.logerr("Cannot find platform's pose info. Is platform's odometry being published? Might want to check if odometry plugin is working")
     rospy.Subscriber("ground_truth/pose", geometry_msgs.msg.Pose, update_current_pose)
@@ -227,10 +227,10 @@ if __name__ == "__main__":
     if rospy.has_param("drone_name"):
         drone_name = rospy.get_param("drone_name")
         try:
-            rospy.client.wait_for_message(f"/{drone_name}/ground_truth/pose", geometry_msgs.msg.Pose, timeout=3)
+            rospy.client.wait_for_message("/{}/ground_truth/pose".format(drone_name), geometry_msgs.msg.Pose, timeout=3)
         except:
-            rospy.logerr(f"Cannot find drone's pose information. Currently looking for it in '/{drone_name}/ground_truth/pose'")
-        rospy.Subscriber(f"/{drone_name}/ground_truth/pose", geometry_msgs.msg.Pose, update_drone_pose)
+            rospy.logerr("Cannot find drone's pose information. Currently looking for it in '/{}/ground_truth/pose'".format(drone_name))
+        rospy.Subscriber("/{}/ground_truth/pose".format(drone_name), geometry_msgs.msg.Pose, update_drone_pose)
     else:
         rospy.logerr("Please set drone name. Cannot find drone")
     
