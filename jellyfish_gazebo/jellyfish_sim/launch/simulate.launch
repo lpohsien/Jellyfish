@@ -4,7 +4,7 @@
     <!--Arguments for simulator setup-->
     <arg name="is_SITL" default="true"/>
     <arg name="use_basic_controller" default="true"/>
-    <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/> 
+    <!-- <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/>  -->
     <arg name="attitude_controller_parameters" default="$(find jellyfish_sim)/resources/attitude_controller_parameters.yaml"/>
     <arg name="drone_parameters" default="$(find jellyfish_sim)/resources/dji_m210_vehicle_parameters.yaml"/>
 
@@ -31,9 +31,10 @@
     <arg name="hedgehog_positions" default="$(find jellyfish_sim)/config/hedgehog_positions.yaml"/>
 
     <!--Spawn world-->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="verbose" value="true"/>
         <arg name="world_name" value="$(arg world)"/> 
-    </include>
+    </include> -->
     
     <!--Spawn landing platform-->
     <group ns="$(arg landing_platform_name)">
@@ -99,4 +100,13 @@
             <node pkg="jellyfish_sim" name="gazebo_drone_movement" type="gazebo_drone_movement.py" respawn="false" output="screen"/>
         </group>
     </group>
+
+    <!-- Launch fake dji_sdj -->
+    <include file="$(find bbuav_gazebo_plugins)/launch/fake_dji_sdk.launch" />
+
+    <!-- Launch fake dji_sdj -->
+    <include file="$(find bbuav_gazebo_plugins)/launch/fake_marvelmind.launch" />
+
+	<!-- Gimbal PID gains -->
+	<!-- <rosparam command="load" file="$(find jellyfish_sim)/config/gimbal_pids.yaml" ns="/$(arg drone_name)/gazebo_ros_control/pid_gains" /> -->
 </launch>

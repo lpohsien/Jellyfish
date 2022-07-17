@@ -86,7 +86,7 @@ def initialise():
     #activate_drone()
     request_control_authority()
     get_initial_flight_informations()
-    take_off()
+    # take_off()
 
 def handle_attitude_data(msg):
     #Uses attitude data to get yaw of drone.
@@ -210,7 +210,7 @@ class move_to_cartesian_coordinates_action():
             feedback.z_diff = z_diff_raw
             self._as.publish_feedback(feedback)
             rospy.loginfo("yaw= {}".format(self.yaw))
-            rospy.loginfo("xdiff: {}, y_diff: {}, z_diff: {}, yaw_diff: {}".format(x_diff, y_diff,(z_diff_raw) < 1), yaw_diff)
+            rospy.loginfo("xdiff: {}, y_diff: {}, z_diff: {}, yaw_diff: {}".format(x_diff, y_diff,(z_diff_raw) < 1, yaw_diff))
             if abs(x_diff) < 1 and abs(y_diff) < 1 and abs(z_diff_raw) < 1 and abs(yaw_diff) < (10/180*3.14159):
                 inbound_counter += 1
                 rospy.loginfo("inbound counter: {}".format(inbound_counter))

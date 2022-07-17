@@ -42,5 +42,5 @@
     </node>
     
     <!-- launch fake marvelmind node-->
-    <node name="fake_marvelmind" pkg="jellyfish_sim" type="fake_marvelmind.py" respawn="false" output="screen"/>    
+    <!-- <node name="fake_marvelmind" pkg="jellyfish_sim" type="fake_marvelmind.py" respawn="false" output="screen"/>     -->
 </launch>

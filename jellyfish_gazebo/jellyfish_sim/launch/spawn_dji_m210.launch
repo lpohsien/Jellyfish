@@ -54,5 +54,8 @@
 	<!-- start joint state publisher -->
 	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 
+	<!-- Gimbal PID gains -->
+	<!-- <rosparam command="load" file="$(find jellyfish_sim)/config/gimbal_pids.yaml" ns="/$(arg)/gazebo_ros_control/pid_gains"> -->
+
 </launch>
 
