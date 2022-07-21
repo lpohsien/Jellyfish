@@ -49,8 +49,8 @@ def initialise():
         initial_gimbal_position = rospy.client.wait_for_message("/dji_sdk/gimbal_angle", geometry_messages.Vector3Stamped, timeout=5)
         current_gimbal_position = initial_gimbal_position.vector
         rospy.loginfo("Got gimbal position from dji_sdk")
-    except rospy.ROSException:
-        rospy.logerr("Failed to get gimbal position from dji_sdk")
+    except rospy.ROSException as e:
+        rospy.logerr("Failed to get gimbal position from dji_sdk: {}".format(e))
 
 class gimbal_angle_control_action():
     _feedback = jellyfish_messages.ControlGimbalFeedback()

@@ -25,8 +25,6 @@ generate_messages(
 )
 
 find_package(gazebo REQUIRED)
-	catkin_package(
-)
 
 catkin_package(
 	CATKIN_DEPENDS 
@@ -36,6 +34,7 @@ catkin_package(
 	rotors_gazebo_plugins
 	rospy
 	mav_msgs
+	wave_gazebo
 	message_runtime
 )
 

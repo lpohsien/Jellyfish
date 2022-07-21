@@ -39,6 +39,7 @@
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>marvelmind_nav</exec_depend>
+  <exec_depend>wave_gazebo</exec_depend>
   
   <depend>gazebo_ros</depend>
   <export>
@@ -46,4 +47,3 @@
           gazebo_model_path="${prefix}/models" />
   </export>
 </package>
-

@@ -32,7 +32,7 @@
         <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
-            <box size="${body_width} ${body_width} ${body_height}" /> <!-- [m] [m] [m] -->
+            <box size="${body_width} ${body_width} ${body_height}" /> [m] [m] [m]
         </geometry>
         </collision>
     </link>
@@ -43,6 +43,27 @@
         <robotNamespace>${robot_namespace}</robotNamespace>
         <linkName>base_link</linkName>
         <rotorVelocitySlowdownSim>${rotor_velocity_slowdown_sim}</rotorVelocitySlowdownSim>
+        </plugin>
+    </gazebo>
+
+    <gazebo>
+        <plugin name="BuoyancyPlugin" filename="libbuoyancy_gazebo_plugin.so">
+        <fluid_density>200</fluid_density>
+        <linear_drag>100</linear_drag>
+        <angular_drag>20</angular_drag>
+
+        <buoyancy name="buoyancy_base">
+            <link_name>base_link</link_name>
+            <pose>0 0 -0.1 0 0 0</pose>
+            <geometry>
+                <box>
+                    <size>0.4 0.4 0.2</size>
+                </box>
+            </geometry>
+        </buoyancy>
+        <link name="body">
+        <volume>100</volume>
+        </link>
         </plugin>
     </gazebo>
 

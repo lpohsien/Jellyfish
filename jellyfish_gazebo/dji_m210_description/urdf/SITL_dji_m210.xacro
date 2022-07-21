@@ -22,16 +22,20 @@
   <xacro:include filename="$(find dji_m210_description)/urdf/component_snippets.xacro"/>
   <xacro:include filename="$(find dji_m210_description)/urdf/gimbal/gimbal.xacro"/>
 
+  <xacro:arg name="namespace" default="dji_m210" />
+  <xacro:arg name="dji_sdk_ns" default="dji_sdk" />
+
   <!-- Properties -->
-  <xacro:property name="namespace" value="dji_m210" />
-  <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
+  <xacro:property name="namespace" value="$(arg namespace)" />
+  <xacro:property name="dji_sdk_ns" value="$(arg dji_sdk_ns)" />
+  <xacro:property name="rotor_velocity_slowdown_sim" value="5" />
   <xacro:property name="mesh_file" value="package://dji_m210_description/meshes/dji_m210/dji_m210_flipped_rotorless.dae" />
   <xacro:property name="mesh_scale" value="1 1 1"/>
   <xacro:property name="mesh" value="propeller"/>  <!-- "propeller" -->
   <xacro:property name="mesh_scale_prop" value=".12 .12 .12"/>
   <xacro:property name="mass" value="2.355" /> <!-- [kg] -->
-  <xacro:property name="body_width" value="0.3" /> <!-- [m] -->
-  <xacro:property name="body_height" value="0.16" /> <!-- [m] -->
+  <xacro:property name="body_width" value="0.50" /> <!-- [m] -->
+  <xacro:property name="body_height" value="0.2" /> <!-- [m] -->
   <xacro:property name="mass_rotor" value="0.08" /> <!-- [kg] -->
   <xacro:property name="arm_length" value="0.17" /> <!-- [m] -->
   <xacro:property name="rotor_offset_top" value="0.1" /> <!-- [m] -->
@@ -215,7 +219,7 @@
       <visualize>true</visualize>
       <topic>__default_topic__</topic>
       <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
-        <topicName>/dji_sdk/imu</topicName>
+        <topicName>${dji_sdk_ns}/imu</topicName>
         <bodyName>imu_link</bodyName>
         <updateRateHZ>10.0</updateRateHZ>
         <gaussianNoise>0.0</gaussianNoise>
@@ -234,14 +238,15 @@
       <commandAttitudeThrustSubTopic>command/attitude</commandAttitudeThrustSubTopic>
       <commandRateThrustSubTopic>command/rate</commandRateThrustSubTopic>
       <commandMotorSpeedSubTopic>command/motor_speed</commandMotorSpeedSubTopic>
-      <imuSubTopic>dji_sdk/imu</imuSubTopic>
-      <motorSpeedCommandPubTopic>gazebo/command/motor_speed</motorSpeedCommandPubTopic>
+      <imuSubTopic>${dji_sdk_ns}/imu</imuSubTopic>
+      <motorSpeedCommandPubTopic>gazebo_command/motor_speed</motorSpeedCommandPubTopic>
     </plugin>
   </gazebo>
 
 	<!--Slap on a gimbal and a camera-->
 
 	<xacro:dji_m210_gimbal
+    namespace="${namespace}"
 		gimbal_roll_min_angle="${gimbal_roll_min_angle}"
 		gimbal_roll_max_angle="${gimbal_roll_max_angle}"
 		gimbal_pitch_min_angle="${gimbal_pitch_min_angle}"

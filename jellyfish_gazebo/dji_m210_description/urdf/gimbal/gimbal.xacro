@@ -3,7 +3,8 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:include filename="$(find dji_m210_description)/urdf/gimbal/gimbal_joints.xacro"/>
     <xacro:property name="M_PI" value="3.14"/>
-    <xacro:macro name="dji_m210_gimbal" params="gimbal_roll_min_angle gimbal_roll_max_angle gimbal_pitch_min_angle gimbal_pitch_max_angle gimbal_yaw_min_angle gimbal_yaw_max_angle">
+    <xacro:macro name="dji_m210_gimbal" params="namespace gimbal_roll_min_angle gimbal_roll_max_angle gimbal_pitch_min_angle gimbal_pitch_max_angle gimbal_yaw_min_angle gimbal_yaw_max_angle">
+        <xacro:arg name="namespace" default="dji_m210" />
         <joint name="gimbal_base_joint" type="fixed">
             <parent link="base_link"/>
             <child link="gimbal_base_plate" />
@@ -112,7 +113,7 @@
             <sensor type="camera" name="camera_camera_sensor">
                 <update_rate>10</update_rate>
                 <camera>
-					<pose>0.107 0 -0.227 0 0 0</pose>
+					<pose>0.107 0 0 0 0 0</pose>
 					<horizontal_fov>${94 * M_PI/180.0}</horizontal_fov>
 					<image>
 						<format>R8G8B8</format>
@@ -130,12 +131,11 @@
                 <alwaysOn>true</alwaysOn>
                 <updateRate>10</updateRate>
 
-                <imageTopicName>dji_sdk/image_raw</imageTopicName>
-                <cameraInfoTopicName>dji_sdk/camera_info</cameraInfoTopicName>
+                <imageTopicName>${namespace}/image_raw</imageTopicName>
+                <cameraInfoTopicName>${namespace}/camera_info</cameraInfoTopicName>
                 <frameName>gimbal_yaw_link</frameName>
                 </plugin>
             </sensor>
         </gazebo>
     </xacro:macro>
 </robot>
-

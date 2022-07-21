@@ -1,112 +1,55 @@
 <?xml version="1.0"?>
 
+<!-- Launch a single uav in an empty world.-->
+
 <launch>
     <!--Arguments for simulator setup-->
     <arg name="is_SITL" default="true"/>
     <arg name="use_basic_controller" default="true"/>
-    <!-- <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/>  -->
-    <arg name="attitude_controller_parameters" default="$(find jellyfish_sim)/resources/attitude_controller_parameters.yaml"/>
-    <arg name="drone_parameters" default="$(find jellyfish_sim)/resources/dji_m210_vehicle_parameters.yaml"/>
+    <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/> 
+    <arg name="use_buoyancy" default="false"/>
+    <arg name="launch_world" default="true"/>
+    <arg name="paused" default="true"/>
 
     <!--Arguments for spawning drone-->
     <arg name="drone_name" default="dji_m210"/>
-    <arg name="initial_drone_x" default="0"/>
-    <arg name="initial_drone_y" default="0"/>
-    <arg name="initial_drone_z" default="0.05"/>
-    <arg name="initial_drone_roll" default="0"/>
-    <arg name="initial_drone_pitch" default="0"/>
-    <arg name="initial_drone_yaw" default="1.57"/>
+    <arg name="drone_x" default="7"/>
+    <arg name="drone_y" default="3"/>
+    <arg name="drone_z" default="0.4"/>
+    <arg name="drone_roll" default="0"/>
+    <arg name="drone_pitch" default="0"/>
+    <arg name="drone_yaw" default="1.57"/>
 
     <!--Arguments for spawning landing platform-->
-    <arg name="landing_platform_name" default="landing_platform"/>
-    <arg name="landing_platform_model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
-    <arg name="initial_platform_x" default="2"/>
-    <arg name="initial_platform_y" default="3"/>
-    <arg name="initial_platform_z" default="0"/>
-    <arg name="initial_platform_yaw" default="0.0" />
+    <arg name="platform_name" default="$(arg drone_name)_landing_platform"/>
+    <arg name="platform_model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
     <arg name="platform_world_frame" default="/world"/>
 
-    <!--Marvelmind related arguments-->
-    <arg name="marvelmind_service_vertices" default="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml"/>
-    <arg name="hedgehog_positions" default="$(find jellyfish_sim)/config/hedgehog_positions.yaml"/>
+    <arg name="dji_sdk_ns" default="dji_sdk"/>
+
 
     <!--Spawn world-->
-    <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="verbose" value="true"/>
+        <arg name="paused" value="$(arg paused)"/>
         <arg name="world_name" value="$(arg world)"/> 
-    </include> -->
-    
-    <!--Spawn landing platform-->
-    <group ns="$(arg landing_platform_name)">
-        <include file="$(find jellyfish_sim)/launch/spawn_landing_platform.launch" >
-            <arg name="name" value="$(arg landing_platform_name)"/>
-            <arg name="model" value="$(arg landing_platform_model)"/>
-            <arg name="x" value="$(arg initial_platform_x)"/>
-            <arg name="y" default="$(arg initial_platform_y)"/>
-            <arg name="z" default="$(arg initial_platform_z)"/>
-            <arg name="yaw"   default="$(arg initial_platform_yaw)" />
-            <arg name="world_frame" default="$(arg platform_world_frame)"/>
-            <arg name="drone_name" default="$(arg drone_name)"/>
-            <arg name="marvelmind_service_vertices" default="$(arg marvelmind_service_vertices)"/>
-            <arg name="hedgehog_positions" default="$(arg hedgehog_positions)"/>
-        </include>
-    </group>
+    </include>
 
-    <!--Spawn drone-->
-    <group ns="$(arg drone_name)">
-        <include file="$(find jellyfish_sim)/launch/spawn_dji_m210.launch" >
-            <arg name="is_SITL" value="$(arg is_SITL)"/>
-            <arg name="name" value="$(arg drone_name)" />
-            <arg name="tf_prefix" value="$(arg drone_name)" />
-            <arg name="x" value="$(arg initial_drone_x)" />
-            <arg name="y" value="$(arg initial_drone_y)" />
-            <arg name="z" value="$(arg initial_drone_z)" />
-            <arg name="roll"  value="$(arg initial_drone_roll)" />
-            <arg name="pitch" value="$(arg initial_drone_pitch)" />
-            <arg name="yaw"   value="$(arg initial_drone_yaw)" />           
-        </include>
-        <rosparam command="load"
-                    file="$(find jellyfish_sim)/config/joints.yaml" 
-                    ns="gimbal_joint_state_controller" />
+    <!-- Spawn drone and landing platform below it.-->
+    <include file="$(find jellyfish_sim)/launch/upload.launch">
+        <arg name="drone_name" value="$(arg drone_name)"/>
+        <arg name="x" value="$(arg drone_x)"/>
+        <arg name="y" value="$(arg drone_y)"/>
+        <arg name="z" value="$(arg drone_z)"/>
+        <arg name="yaw" value="$(arg drone_yaw)"/>
 
-        <rosparam command="load"
-                    file="$(find jellyfish_sim)/config/gimbal_pitch.yaml"
-                    ns="gimbal_pitch_controller" />
-            
-        <rosparam command="load"
-                    file="$(find jellyfish_sim)/config/gimbal_roll.yaml"
-                    ns="gimbal_roll_controller" />
+        <arg name="platform_world_frame" value="$(arg platform_world_frame)"/>
+        <arg name="platform_name" value="$(arg platform_name)"/>
+        <arg name="platform_model" value="$(arg platform_model)"/>
 
-        <rosparam command="load"
-                    file="$(find jellyfish_sim)/config/gimbal_yaw.yaml"
-                    ns="gimbal_yaw_controller" />
-
-
-        <node name="gimbal_controller_spawner" pkg="controller_manager" type="spawner"
-                args="gimbal_joint_state_controller
-                    gimbal_pitch_controller
-                    gimbal_roll_controller
-                    gimbal_yaw_controller"/>
-
-        <!--Spawn relavant nodes-->
-        <group if="$(arg is_SITL)">
-            <group if="$(arg use_basic_controller)">
-                <node name="lee_position_controller_node" pkg="rotors_control" type="lee_position_controller_node" output="screen">
-                    <rosparam command="load" file="$(arg attitude_controller_parameters)" />
-                    <rosparam command="load" file="$(arg drone_parameters)" />
-                    <remap from="odometry" to="ground_truth/odometry" />
-                </node>
-            </group>
-            <node pkg="jellyfish_sim" name="gazebo_drone_movement" type="gazebo_drone_movement.py" respawn="false" output="screen"/>
-        </group>
-    </group>
-
-    <!-- Launch fake dji_sdj -->
-    <include file="$(find bbuav_gazebo_plugins)/launch/fake_dji_sdk.launch" />
-
-    <!-- Launch fake dji_sdj -->
-    <include file="$(find bbuav_gazebo_plugins)/launch/fake_marvelmind.launch" />
-
-	<!-- Gimbal PID gains -->
-	<!-- <rosparam command="load" file="$(find jellyfish_sim)/config/gimbal_pids.yaml" ns="/$(arg drone_name)/gazebo_ros_control/pid_gains" /> -->
+        <arg name="dji_sdk_ns" value="$(arg dji_sdk_ns)"/>
+        <arg name="use_buoyancy" value="$(arg use_buoyancy)"/>
+        <arg name="is_SITL" value="$(arg is_SITL)"/>
+        <arg name="use_basic_controller" value="$(arg use_basic_controller)"/>
+    </include>
 </launch>

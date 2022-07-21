@@ -1,9 +1,39 @@
 <?xml version="1.0"?>
 
 <launch>
-    <!--Make sure that the drone name here matches the drone name in the simulate.launch file-->
-    <arg name="drone_name" default="dji_m210"/>
 
-    <node pkg="jellyfish_sim" name="fake_dji_sdk" type="fake_dji_sdk.py" respawn="false" output="screen"/>
+    <arg name="drone_name" default="dji_m210" />
+    <arg name="dji_sdk_ns" default="dji_sdk" />
+
+    <!-- Make sure that the drone name here matches the drone name in the simulate.launch file -->
+    <param name="drone_name" value="$(arg drone_name)" />
+
+    <!-- Spawn reference setting -->
+    <param name="spawn_latitude" type="double" value="0" />
+    <param name="spawn_longitude" type="double" value="0" />
+    <param name="spawn_altitude" type="double" value="0" />
+
+    <!-- Topic subscribed by dji_sdk -->
+    <param name="current_pose_topic" value="$(arg drone_name)/ground_truth/pose" />
+    <param name="joy_command_topic" value="$(arg dji_sdk_ns)/flight_control_setpoint_ENUposition_yaw" />
+    <param name="gimbal_command_topic" value="$(arg dji_sdk_ns)/gimbal_angle_cmd" />
+    
+    <!-- Services advertised by dji_sdk -->
+    <param name="control_authority_topic" value="$(arg dji_sdk_ns)/sdk_control_authority" />
+    <param name="drone_task_topic" value="$(arg dji_sdk_ns)/drone_task_control" />
+    <param name="local_pos_ref_topic" value="$(arg dji_sdk_ns)/set_local_pos_ref" />
+
+    <!-- Topics published the dji_sdk -->
+    <param name="gps_position_topic" value="$(arg dji_sdk_ns)/gps_position" />
+    <param name="goal_topic" value="$(arg drone_name)/position_command/goal" />
+    <param name="gazebo_command_topic" value="$(arg drone_name)/gazebo_command/motor_speed" />
+    <param name="attitude_topic" value="$(arg dji_sdk_ns)/attitude" /> 
+    <param name="local_position_topic" value="$(arg dji_sdk_ns)/local_position" /> 
+    <param name="gimbal_angle_topic" value="$(arg dji_sdk_ns)/gimbal_angle" />  
+    <param name="gimbal_roll_command_topic" value="$(arg drone_name)/gimbal_roll_controller/command" />  
+    <param name="gimbal_pitch_command_topic" value="$(arg drone_name)/gimbal_pitch_controller/command" />  
+    <param name="gimbal_yaw_command_topic" value="$(arg drone_name)/gimbal_yaw_controller/command" />       
+
+    <node pkg="jellyfish_sim" name="dji_sdk_ns" type="fake_dji_sdk.py" respawn="true" output="screen"/>
+
 </launch>
-
