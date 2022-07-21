@@ -41,7 +41,7 @@
 	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 	
 	<!-- Gimbal PID gains -->
-	<!-- <rosparam command="load" file="$(find jellyfish_sim)/config/gimbal_pids.yaml" ns="/$(arg name)/gazebo_ros_control/pid_gains" /> -->
+	<!-- <rosparam command="load" file="$(find jellyfish_urdf)/config/gimbal_pids.yaml" ns="/$(arg name)/gazebo_ros_control/pid_gains" /> -->
 
 	<!-- push robot_description to factory and spawn robot in gazebo -->
 	<node name="spawn_quad" pkg="gazebo_ros" type="spawn_model"

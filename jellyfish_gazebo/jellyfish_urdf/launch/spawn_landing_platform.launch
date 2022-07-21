@@ -2,7 +2,7 @@
 
 <launch>
     <arg name="name" default="landing_platform"/>
-    <arg name="model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
+    <arg name="model" default="$(find jellyfish_urdf)/URDF/basic_tag.xacro"/>
     <arg name="use_buoyancy" default="false"/>
     <arg name="x" default="3.0"/>
     <arg name="y" default="0.0"/>
@@ -12,8 +12,8 @@
     <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
     <arg name="base_link_frame" default="$(arg tf_prefix)/base_link"/>
     <arg name="drone_name" default="dji_m210"/>
-    <arg name="marvelmind_service_vertices" default="$(find jellyfish_sim)/config/marvelmind_service_vertices.yaml"/>
-    <arg name="hedgehog_positions" default="$(find jellyfish_sim)/config/hedgehog_positions.yaml"/>
+    <arg name="marvelmind_service_vertices" default="$(find jellyfish_urdf)/config/marvelmind_service_vertices.yaml"/>
+    <arg name="hedgehog_positions" default="$(find jellyfish_urdf)/config/hedgehog_positions.yaml"/>
    
     <group ns="$(arg name)">
         <!-- Send drone name, hedgehog positions and service vertices to param server (needed for fake marvelmind to work) -->

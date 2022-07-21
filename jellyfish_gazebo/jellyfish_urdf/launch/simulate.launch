@@ -6,7 +6,7 @@
     <!--Arguments for simulator setup-->
     <arg name="is_SITL" default="true"/>
     <arg name="use_basic_controller" default="true"/>
-    <arg name="world" default="$(find jellyfish_sim)/worlds/jellyfish.world"/> 
+    <arg name="world" default="$(find jellyfish_urdf)/worlds/jellyfish.world"/> 
     <arg name="use_buoyancy" default="false"/>
     <arg name="launch_world" default="true"/>
     <arg name="paused" default="true"/>
@@ -22,7 +22,7 @@
 
     <!--Arguments for spawning landing platform-->
     <arg name="platform_name" default="$(arg drone_name)_landing_platform"/>
-    <arg name="platform_model" default="$(find jellyfish_sim)/URDF/basic_tag.xacro"/>
+    <arg name="platform_model" default="$(find jellyfish_urdf)/URDF/basic_tag.xacro"/>
     <arg name="platform_world_frame" default="/world"/>
 
     <arg name="dji_sdk_ns" default="dji_sdk"/>
@@ -36,7 +36,7 @@
     </include>
 
     <!-- Spawn drone and landing platform below it.-->
-    <include file="$(find jellyfish_sim)/launch/upload.launch">
+    <include file="$(find jellyfish_urdf)/launch/upload.launch">
         <arg name="drone_name" value="$(arg drone_name)"/>
         <arg name="x" value="$(arg drone_x)"/>
         <arg name="y" value="$(arg drone_y)"/>

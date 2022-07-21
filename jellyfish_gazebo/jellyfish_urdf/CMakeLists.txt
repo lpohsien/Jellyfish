@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(jellyfish_sim)
+project(jellyfish_urdf)
 
 find_package(catkin REQUIRED COMPONENTS
 	gazebo_ros

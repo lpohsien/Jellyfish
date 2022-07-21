@@ -34,6 +34,6 @@
     <param name="gimbal_pitch_command_topic" value="$(arg drone_name)/gimbal_pitch_controller/command" />  
     <param name="gimbal_yaw_command_topic" value="$(arg drone_name)/gimbal_yaw_controller/command" />       
 
-    <node pkg="jellyfish_sim" name="dji_sdk_ns" type="fake_dji_sdk.py" respawn="true" output="screen"/>
+    <node pkg="jellyfish_urdf" name="dji_sdk_ns" type="fake_dji_sdk.py" respawn="true" output="screen"/>
 
 </launch>
