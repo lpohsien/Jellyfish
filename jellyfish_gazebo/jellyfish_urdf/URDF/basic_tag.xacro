@@ -63,16 +63,16 @@
         <gazebo>
             <plugin name="LandingPlatformBuoyancyPlugin" filename="libbuoyancy_gazebo_plugin.so">
             <wave_model>ocean_waves</wave_model>
-            <fluid_density>5000</fluid_density>
+            <fluid_density>997</fluid_density>
             <fluid_level>0.0</fluid_level>
             <linear_drag>1000</linear_drag>
             <angular_drag>200</angular_drag>
             <buoyancy name="buoyancy_base">
                 <link_name>base_link</link_name>
-                <pose>0 0 -0.2 0 0 0</pose>
+                <pose>0 0 -0.4 0 0 0</pose>
                 <geometry>
                     <box>
-                        <size>2 2 0.3</size>
+                        <size>1 1 0.3</size>
                     </box>
                 </geometry>
             </buoyancy>

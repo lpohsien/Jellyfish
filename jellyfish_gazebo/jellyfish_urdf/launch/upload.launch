@@ -14,10 +14,11 @@
     <arg name="y"     default="3"/>
     <arg name="z"     default="0.5"/>
     <arg name="yaw"   default="0"/>
-
+    
+    <arg name="launch_platform"    default="true"/>
     <arg name="platform_x"      value="$(arg x)"/>
     <arg name="platform_y"      value="$(arg y)"/>
-    <arg name="platform_z"      value="0.1"/>
+    <arg name="platform_z"      default="$(eval arg('z') - 0.15)"/>
     <arg name="platform_yaw"    value="0"/>
     <arg name="platform_name" default="$(arg drone_name)_landing_platform"/>
     <arg name="platform_model" default="$(find jellyfish_urdf)/URDF/basic_tag.xacro"/>
@@ -39,19 +40,21 @@
     <rosparam command="load" file="$(arg hedgehog_positions)" ns="/$(arg platform_name)"/>
    
     <!--Spawn landing platform-->
-    <include file="$(find jellyfish_urdf)/launch/spawn_landing_platform.launch" >
-        <arg name="name" value="$(arg platform_name)"/>
-        <arg name="model" value="$(arg platform_model)"/>
-        <arg name="x" value="$(arg platform_x)"/>
-        <arg name="y" default="$(arg platform_y)"/>
-        <arg name="z" default="$(arg platform_z)"/>
-        <arg name="yaw"   default="$(arg platform_yaw)" />
-        <arg name="world_frame" default="$(arg platform_world_frame)"/>
-        <arg name="drone_name" default="$(arg drone_name)"/>
-        <arg name="marvelmind_service_vertices" default="$(arg marvelmind_service_vertices)"/>
-        <arg name="hedgehog_positions" default="$(arg hedgehog_positions)"/>
-        <arg name="use_buoyancy" default="$(arg use_buoyancy)"/>
-    </include>
+    <group if="$(arg launch_platform)">
+        <include file="$(find jellyfish_urdf)/launch/spawn_landing_platform.launch" >
+            <arg name="name" value="$(arg platform_name)"/>
+            <arg name="model" value="$(arg platform_model)"/>
+            <arg name="x" value="$(arg platform_x)"/>
+            <arg name="y" default="$(arg platform_y)"/>
+            <arg name="z" default="$(arg platform_z)"/>
+            <arg name="yaw"   default="$(arg platform_yaw)" />
+            <arg name="world_frame" default="$(arg platform_world_frame)"/>
+            <arg name="drone_name" default="$(arg drone_name)"/>
+            <arg name="marvelmind_service_vertices" default="$(arg marvelmind_service_vertices)"/>
+            <arg name="hedgehog_positions" default="$(arg hedgehog_positions)"/>
+            <arg name="use_buoyancy" default="$(arg use_buoyancy)"/>
+        </include>
+    </group>
 
     <!--Spawn drone-->
     <group ns="$(arg drone_name)">

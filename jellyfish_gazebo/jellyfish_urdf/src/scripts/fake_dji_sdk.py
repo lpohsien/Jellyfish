@@ -23,7 +23,7 @@ local_pos_ref_set = False
 drone_activated = False
 control_authority = False
 command_in_queue = False
-active = False # toggled by calling the /dji_sdk/drone_task_control service
+active = True # toggled by calling the /dji_sdk/drone_task_control service
 gimbal_command_in_queue = False
 
 # As this uses the equirectangular projection approximation, this latitude allows for the best approximation
