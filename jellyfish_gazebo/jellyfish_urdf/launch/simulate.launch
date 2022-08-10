@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<!-- Launch a single uav in an empty world.-->
+
+<launch>
+    <!--Arguments for simulator setup-->
+    <arg name="is_SITL" default="true"/>
+    <arg name="use_basic_controller" default="true"/>
+    <arg name="world" default="$(find jellyfish_urdf)/worlds/jellyfish.world"/> 
+    <arg name="use_buoyancy" default="false"/>
+    <arg name="launch_world" default="true"/>
+    <arg name="paused" default="true"/>
+
+    <!--Arguments for spawning drone-->
+    <arg name="drone_name" default="dji_m210"/>
+    <arg name="drone_x" default="7"/>
+    <arg name="drone_y" default="3"/>
+    <arg name="drone_z" default="0.4"/>
+    <arg name="drone_roll" default="0"/>
+    <arg name="drone_pitch" default="0"/>
+    <arg name="drone_yaw" default="1.57"/>
+
+    <!--Arguments for spawning landing platform-->
+    <arg name="platform_name" default="$(arg drone_name)_landing_platform"/>
+    <arg name="platform_model" default="$(find jellyfish_urdf)/URDF/basic_tag.xacro"/>
+    <arg name="platform_world_frame" default="/world"/>
+
+    <arg name="dji_sdk_ns" default="dji_sdk"/>
+
+
+    <!--Spawn world-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="verbose" value="true"/>
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="world_name" value="$(arg world)"/> 
+    </include>
+
+    <!-- Spawn drone and landing platform below it.-->
+    <include file="$(find jellyfish_urdf)/launch/upload.launch">
+        <arg name="drone_name" value="$(arg drone_name)"/>
+        <arg name="x" value="$(arg drone_x)"/>
+        <arg name="y" value="$(arg drone_y)"/>
+        <arg name="z" value="$(arg drone_z)"/>
+        <arg name="yaw" value="$(arg drone_yaw)"/>
+
+        <arg name="platform_world_frame" value="$(arg platform_world_frame)"/>
+        <arg name="platform_name" value="$(arg platform_name)"/>
+        <arg name="platform_model" value="$(arg platform_model)"/>
+
+        <arg name="dji_sdk_ns" value="$(arg dji_sdk_ns)"/>
+        <arg name="use_buoyancy" value="$(arg use_buoyancy)"/>
+        <arg name="is_SITL" value="$(arg is_SITL)"/>
+        <arg name="use_basic_controller" value="$(arg use_basic_controller)"/>
+    </include>
+</launch>

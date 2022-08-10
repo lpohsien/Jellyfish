@@ -201,6 +201,7 @@
 	<!--Slap on a gimbal and a camera-->
 
 	<xacro:dji_m210_gimbal
+		namespace="${namespace}"
 		gimbal_roll_min_angle="${gimbal_roll_min_angle}"
 		gimbal_roll_max_angle="${gimbal_roll_max_angle}"
 		gimbal_pitch_min_angle="${gimbal_pitch_min_angle}"

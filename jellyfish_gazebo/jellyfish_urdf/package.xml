@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>jellyfish_sim</name>
+  <name>jellyfish_urdf</name>
   <version>0.0.0</version>
-  <description>The jellyfish_sim package</description>
+  <description>The jellyfish_urdf package</description>
 
   <maintainer email="sharkbonebroth@todo.todo">sharkbonebroth</maintainer>
 
@@ -39,6 +39,7 @@
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>position_controllers</exec_depend>
   <exec_depend>marvelmind_nav</exec_depend>
+  <exec_depend>wave_gazebo</exec_depend>
   
   <depend>gazebo_ros</depend>
   <export>
@@ -46,4 +47,3 @@
           gazebo_model_path="${prefix}/models" />
   </export>
 </package>
-

@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="drone_name" default="dji_m210" />
+    <arg name="landing_platform_name" default="landing_platform" />
+
+    <group ns="fake_marvelmind">
+        <!-- Make sure that the drone name here matches the drone name in the simulate.launch file -->
+        <param name="drone_name" value="$(arg drone_name)" />
+        <param name="landing_platform_name" value="$(arg landing_platform_name)" />
+        <node pkg="jellyfish_urdf" name="$(arg landing_platform_name)_fake_marvelmind" type="fake_marvelmind.py" respawn="true" output="screen"/>
+    </group>
+</launch>

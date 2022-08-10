@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(jellyfish_sim)
+project(jellyfish_urdf)
 
 find_package(catkin REQUIRED COMPONENTS
 	gazebo_ros
@@ -25,8 +25,6 @@ generate_messages(
 )
 
 find_package(gazebo REQUIRED)
-	catkin_package(
-)
 
 catkin_package(
 	CATKIN_DEPENDS 
@@ -36,6 +34,7 @@ catkin_package(
 	rotors_gazebo_plugins
 	rospy
 	mav_msgs
+	wave_gazebo
 	message_runtime
 )
 

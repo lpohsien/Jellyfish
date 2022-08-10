@@ -113,12 +113,15 @@ def joy_broadcaster():
     pub = rospy.Publisher("dji_sdk/flight_control_setpoint_ENUposition_yaw", sensor_msgs.msg.Joy, queue_size=1)
     r = rospy.Rate(update_rate)
     while not rospy.is_shutdown():
-        if to_publish:
-            command = sensor_msgs.msg.Joy()
-            command.axes = to_publish
-            pub.publish(command)
-            to_publish = None
-        r.sleep()
+        try:
+            if to_publish:
+                command = sensor_msgs.msg.Joy()
+                command.axes = to_publish
+                pub.publish(command)
+                to_publish = None
+            r.sleep()
+        except OverflowError as e:
+            rospy.logerr("Overflow error: {}".format(e))
 
 """
 Move_to_cartesian_coordinates_action makes use of the /dji_sdk/flight_control_setpoint_ENUposition_yaw 
@@ -193,6 +196,9 @@ class move_to_cartesian_coordinates_action():
                 self._result.success = 0
                 self._as.set_preempted(self._result)
                 break
+            if current_yaw is None:
+                rospy.loginfo_throttle_identical(2, "Waiting for yaw to be updated")
+                r.sleep()
             x_diff_raw = goal.x_goal - self.x
             y_diff_raw = goal.y_goal - self.y
             z_diff_raw = goal.z_goal - self.z

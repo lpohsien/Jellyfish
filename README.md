@@ -51,7 +51,7 @@ Mimics some basic functionalities of dji's sdk. It should be noted that the move
 To run a demonstration of this package, clone this repository into your workspace and build. After that, run the SITL simulation without the basic drone controller using the following command.
 
 `
-roslaunch jellyfish_sim simulate.launch
+roslaunch jellyfish_urdf simulate.launch
 `
 
 In another terminal,run the following command to command the props to spin and generate thrust. Increasing the thrust values would cause the drone to start ascending
@@ -65,13 +65,13 @@ rostopic pub /dji_m210/command/motor_speed mav_msgs/Actuators '{angular_velociti
 To run a demonstration of movement control using the fake_dji_sdk, run the following 
 
 `
-roslaunch jellyfish_sim simulate.launch
+roslaunch jellyfish_urdf simulate.launch
 `
 
 In a seperate terminal, run
 
 `
-rosrun jellyfish_sim fake_dji_sdk.py
+rosrun jellyfish_urdf fake_dji_sdk.py
 `
 
 Then, use the jellyfish launch file. This would start up the relevant nodes for gimbal controls, cartesian and GPS movement
@@ -138,7 +138,7 @@ rosservice call /dji_sdk/set_local_pos_ref
 In a seperate terminal, run
 
 `
-roslaunch jellyfish_sim simulate.launch is_SITL:=false
+roslaunch jellyfish_urdf simulate.launch is_SITL:=false
 `
 
 Then, use the jellyfish launch file. This would start up the relevant nodes for gimbal controls, cartesian and GPS movement

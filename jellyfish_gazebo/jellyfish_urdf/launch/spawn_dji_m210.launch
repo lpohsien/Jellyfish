@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 
 <launch>
-	<arg name="name" default="dji_m210"/>
+	<arg name="namespace" default="dji_m210"/>
+	<arg name="dji_sdk_ns" default="dji_sdk"/>
 	<arg name="is_SITL" default="true"/>
 	<arg name="SITL_drone_model" default="$(find dji_m210_description)/urdf/SITL_dji_m210.xacro"/>
 	<arg name="HITL_drone_model" default="$(find dji_m210_description)/urdf/HITL_dji_m210.xacro"/>
@@ -11,27 +12,36 @@
 	<arg name="z" default="0.0"/>
 	<arg name="roll"  default="0" />
 	<arg name="pitch" default="0" />
-	<arg name="yaw"   default="3.14" /> 
+	<arg name="yaw"   default="0" /> 
 	<arg name="world_frame" default="/world"/>
 	<arg name="base_link_frame" default="$(arg tf_prefix)/base_link"/>
-
 	<!-- send the robot XML to param server -->
 	<group if="$(arg is_SITL)">
 		<param name="robot_description"
 		command="$(find xacro)/xacro '$(arg SITL_drone_model)'
 				world_frame:=$(arg world_frame)
-				robot_namespace:=$(arg name)"/>
+				namespace:=$(arg namespace) dji_sdk_ns:=$(arg dji_sdk_ns)"/>
 	</group>
 	<group unless="$(arg is_SITL)">
 		<param name="robot_description"
 		command="$(find xacro)/xacro '$(arg HITL_drone_model)'
 				world_frame:=$(arg world_frame)
-				robot_namespace:=$(arg name)"/>
+				namespace:=$(arg namespace) dji_sdk_ns:=$(arg dji_sdk_ns)"/>
 	</group>
 
 	<param name="tf_prefix" type="string" value="$(arg tf_prefix)" />
 	<param name="base_link_frame" type="string" value="$(arg base_link_frame)"/>
 	<param name="world_frame" type="string" value="$(arg world_frame)"/>
+	
+	<!-- start robot state publisher -->
+	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
+		<param name="publish_frequency" type="double" value="50.0" />
+	</node>
+	<!-- start joint state publisher -->
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+	
+	<!-- Gimbal PID gains -->
+	<!-- <rosparam command="load" file="$(find jellyfish_urdf)/config/gimbal_pids.yaml" ns="/$(arg name)/gazebo_ros_control/pid_gains" /> -->
 
 	<!-- push robot_description to factory and spawn robot in gazebo -->
 	<node name="spawn_quad" pkg="gazebo_ros" type="spawn_model"
@@ -43,19 +53,7 @@
 			-R $(arg roll)
 			-P $(arg pitch)
 			-Y $(arg yaw)
-			-model $(arg name)"
+			-model $(arg namespace)"
 		respawn="false" output="screen">
 	</node>
-
-	<!-- start robot state publisher -->
-	<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen" >
-		<param name="publish_frequency" type="double" value="50.0" />
-	</node>
-	<!-- start joint state publisher -->
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-
-	<!-- Gimbal PID gains -->
-	<!-- <rosparam command="load" file="$(find jellyfish_sim)/config/gimbal_pids.yaml" ns="/$(arg)/gazebo_ros_control/pid_gains"> -->
-
 </launch>
-
